@@ -26,37 +26,78 @@
 
         .header { text-align: center; padding: 15px 0; }
         .header h1 { font-size: 26px; background: linear-gradient(90deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header p { font-size: 12px; color: #666; margin-top: 5px; }
 
-        /* Target Language Selector */
-        .target-section {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 15px;
-            margin: 10px 0;
-            text-align: center;
+        /* UI Language Switcher */
+        .ui-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 5px 0 10px;
         }
 
-        .target-label { font-size: 13px; color: #888; margin-bottom: 10px; }
-
-        .target-btns { display: flex; gap: 10px; justify-content: center; }
-
-        .target-btn {
-            padding: 12px 20px;
-            border-radius: 12px;
+        .ui-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
             border: 2px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05);
             color: #888;
             font-family: inherit;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
         }
 
-        .target-btn .emoji { font-size: 24px; display: block; margin-bottom: 5px; }
+        .ui-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
 
-        .target-btn.active { border-color: #ffd93d; background: rgba(255, 217, 61, 0.15); color: #ffd93d; }
+        /* Language Selectors */
+        .lang-select {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lang-select .box { flex: 1; text-align: center; }
+        .lang-select .label { font-size: 11px; color: #888; margin-bottom: 8px; }
+
+        .lang-select select {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            text-align: center;
+        }
+
+        .lang-select select option { background: #1a1a3e; color: #fff; }
+
+        .lang-select .swap-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .lang-select .swap-btn:hover { transform: scale(1.1) rotate(180deg); }
 
         /* Status */
         .status-bar {
@@ -76,25 +117,6 @@
 
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .status-text { font-size: 13px; color: #888; }
-
-        /* Language rotation indicator */
-        .rotation-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 5px 0;
-        }
-
-        .rot-lang {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.05);
-            opacity: 0.4;
-            transition: all 0.3s;
-        }
-
-        .rot-lang.active { opacity: 1; background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
 
         /* Mic Button */
         .mic-area {
@@ -156,41 +178,47 @@
 <body>
     <div class="app">
         <div class="header">
-            <h1>⚡ مترجم فوري</h1>
-            <p>يدور بين اللغات تلقائياً للكشف عن صوتك</p>
+            <h1 id="appTitle">⚡ مترجم فوري</h1>
         </div>
 
-        <div class="target-section">
-            <div class="target-label">ترجم إلى:</div>
-            <div class="target-btns">
-                <button class="target-btn active" id="btnZh" onclick="setTarget('zh-CN')">
-                    <span class="emoji">🇨🇳</span> صيني
-                </button>
-                <button class="target-btn" id="btnEn" onclick="setTarget('en')">
-                    <span class="emoji">🇺🇸</span> إنجليزي
-                </button>
-                <button class="target-btn" id="btnAr" onclick="setTarget('ar')">
-                    <span class="emoji">🇸🇦</span> عربي
-                </button>
+        <!-- UI Language Switcher -->
+        <div class="ui-switch">
+            <button class="ui-btn" id="uiAr" onclick="setUI('ar')">العربية</button>
+            <button class="ui-btn" id="uiZh" onclick="setUI('zh')">中文</button>
+            <button class="ui-btn" id="uiEn" onclick="setUI('en')">English</button>
+        </div>
+
+        <!-- Language Selectors -->
+        <div class="lang-select">
+            <div class="box">
+                <div class="label" data-i18n="speakLabel">أنا أتحدث</div>
+                <select id="srcSelect">
+                    <option value="ar" selected>🇸🇦 العربية</option>
+                    <option value="zh-CN">🇨🇳 中文</option>
+                    <option value="en">🇺🇸 English</option>
+                </select>
             </div>
-        </div>
-
-        <div class="rotation-indicator">
-            <span class="rot-lang" id="rotAr">🇸🇦 عربي</span>
-            <span class="rot-lang" id="rotZh">🇨🇳 صيني</span>
-            <span class="rot-lang" id="rotEn">🇺🇸 إنجليزي</span>
+            <button class="swap-btn" id="swapBtn">⇄</button>
+            <div class="box">
+                <div class="label" data-i18n="trLabel">ترجم إلى</div>
+                <select id="dstSelect">
+                    <option value="ar">🇸🇦 العربية</option>
+                    <option value="zh-CN" selected>🇨🇳 中文</option>
+                    <option value="en">🇺🇸 English</option>
+                </select>
+            </div>
         </div>
 
         <div class="status-bar">
             <div class="dot" id="dot"></div>
-            <span class="status-text" id="stxt">جاهز</span>
+            <span class="status-text" id="stxt" data-i18n="ready">جاهز</span>
         </div>
 
         <div class="mic-area">
             <button class="mic-btn" id="micBtn">
                 <span class="mic-icon">🎤</span>
             </button>
-            <div class="mic-label" id="micLabel">اضغط وابدأ بالتحدث</div>
+            <div class="mic-label" id="micLabel" data-i18n="micHint">اضغط وابدأ بالتحدث</div>
             <div class="waves" id="waves">
                 <div class="bar"></div>
                 <div class="bar"></div>
@@ -202,23 +230,83 @@
 
         <div class="cards">
             <div class="card src">
-                <div class="tag" id="srcTag">ما قلته</div>
+                <div class="tag" id="srcTag" data-i18n="saidTag">ما قلته</div>
                 <div class="txt" id="srcTxt">...</div>
             </div>
             <div class="arrow">↓</div>
             <div class="card dst">
-                <div class="tag" id="dstTag">الترجمة (صيني)</div>
+                <div class="tag" id="dstTag" data-i18n="trTag">الترجمة</div>
                 <div class="txt" id="dstTxt">...</div>
-                <button class="speak-btn" id="speakBtn">🔊</button>
+                <button class="speak-btn" id="speakBtn" title="🔊">🔊</button>
             </div>
         </div>
 
-        <div class="footer">يدور تلقائياً بين عربي/صيني/إنجليزي للكشف</div>
+        <div class="footer" data-i18n="footer">اختر لغتك واللغة المطلوب الترجمة إليها - ثم تحدث</div>
     </div>
 
     <script>
+        // ========== Translations ==========
+        const I18N = {
+            ar: {
+                appTitle: '⚡ مترجم فوري',
+                speakLabel: 'أنا أتحدث',
+                trLabel: 'ترجم إلى',
+                ready: 'جاهز',
+                micHint: 'اضغط وابدأ بالتحدث',
+                saidTag: 'ما قلته',
+                trTag: 'الترجمة',
+                footer: 'اختر لغتك واللغة المطلوب الترجمة إليها - ثم تحدث',
+                listening: 'أستمع...',
+                speakNow: 'اتكلم الآن',
+                noSpeech: 'لم أسمع صوتاً',
+                needMic: 'السماح بالوصول للميكروفون',
+                useChrome: 'استخدم Chrome',
+                micDenied: 'تم رفض الوصول للميكروفون',
+                translating: 'جاري الترجمة...',
+                transError: 'خطأ في الترجمة',
+                transNoNet: 'تحقق من الإنترنت'
+            },
+            zh: {
+                appTitle: '⚡ 即时翻译',
+                speakLabel: '我说',
+                trLabel: '翻译为',
+                ready: '准备就绪',
+                micHint: '按下并开始说话',
+                saidTag: '我所说',
+                trTag: '翻译',
+                footer: '选择你的语言及目标语言，然后说话',
+                listening: '正在聆听...',
+                speakNow: '请说话',
+                noSpeech: '未听到声音',
+                needMic: '需要允许麦克风',
+                useChrome: '请使用 Chrome',
+                micDenied: '麦克风被拒绝',
+                translating: '正在翻译...',
+                transError: '翻译错误',
+                transNoNet: '检查互联网'
+            },
+            en: {
+                appTitle: '⚡ Instant Translator',
+                speakLabel: 'I speak',
+                trLabel: 'Translate to',
+                ready: 'Ready',
+                micHint: 'Press and start speaking',
+                saidTag: 'What I said',
+                trTag: 'Translation',
+                footer: 'Choose your language and target language, then speak',
+                listening: 'Listening...',
+                speakNow: 'Speak now',
+                noSpeech: 'No speech detected',
+                needMic: 'Please allow microphone',
+                useChrome: 'Use Chrome',
+                micDenied: 'Microphone access denied',
+                translating: 'Translating...',
+                transError: 'Translation error',
+                transNoNet: 'Check internet'
+            }
+        };
+
         // ========== Config ==========
-        const LANGS_LIST = ['ar', 'zh-CN', 'en'];
         const LANG = {
             'ar': { name: 'العربية', flag: '🇸🇦' },
             'zh-CN': { name: '中文', flag: '🇨🇳' },
@@ -226,14 +314,12 @@
         };
 
         // ========== State ==========
-        let targetLang = 'zh-CN';
+        let uiLang = 'ar';
+        let srcLang = 'ar';
+        let dstLang = 'zh-CN';
         let isRec = false;
         let rec = null;
-        let currentSensorLang = 0; // index in LANGS_LIST
         let lastSpoken = '';
-        let detectedLang = null;
-        let sensorTimer = null;
-        let speechTimeout = null;
 
         // ========== Elements ==========
         const micBtn = document.getElementById('micBtn');
@@ -246,36 +332,48 @@
         const stxt = document.getElementById('stxt');
         const waves = document.getElementById('waves');
         const speakBtn = document.getElementById('speakBtn');
-        const btnZh = document.getElementById('btnZh');
-        const btnEn = document.getElementById('btnEn');
-        const btnAr = document.getElementById('btnAr');
-        const rotAr = document.getElementById('rotAr');
-        const rotZh = document.getElementById('rotZh');
-        const rotEn = document.getElementById('rotEn');
+        const srcSelect = document.getElementById('srcSelect');
+        const dstSelect = document.getElementById('dstSelect');
+        const swapBtn = document.getElementById('swapBtn');
+        const appTitle = document.getElementById('appTitle');
+        const uiAr = document.getElementById('uiAr');
+        const uiZh = document.getElementById('uiZh');
+        const uiEn = document.getElementById('uiEn');
+
+        // ========== Set UI Language ==========
+        function setUI(lang) {
+            uiLang = lang;
+            const t = I18N[lang];
+
+            appTitle.textContent = t.appTitle;
+            document.querySelector('[data-i18n="speakLabel"]').textContent = t.speakLabel;
+            document.querySelector('[data-i18n="trLabel"]').textContent = t.trLabel;
+            stxt.textContent = t.ready;
+            micLabel.textContent = t.micHint;
+            document.querySelector('[data-i18n="saidTag"]').textContent = t.saidTag;
+            document.querySelector('[data-i18n="trTag"]').textContent = t.trTag;
+            document.querySelector('[data-i18n="footer"]').textContent = t.footer;
+
+            uiAr.classList.toggle('active', lang === 'ar');
+            uiZh.classList.toggle('active', lang === 'zh');
+            uiEn.classList.toggle('active', lang === 'en');
+
+            updateLabels();
+        }
+
+        // ========== Update Labels ==========
+        function updateLabels() {
+            srcTag.textContent = `${I18N[uiLang].saidTag} (${LANG[srcLang].name})`;
+            dstTag.textContent = `${I18N[uiLang].trTag} (${LANG[dstLang].name})`;
+        }
 
         // ========== Check Browser ==========
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) {
-            stxt.textContent = 'استخدم Chrome';
+            stxt.textContent = I18N[uiLang].useChrome;
             micBtn.disabled = true;
         } else {
             dot.classList.add('on');
-        }
-
-        // ========== Set Target ==========
-        function setTarget(lang) {
-            targetLang = lang;
-            btnZh.classList.toggle('active', lang === 'zh-CN');
-            btnEn.classList.toggle('active', lang === 'en');
-            btnAr.classList.toggle('active', lang === 'ar');
-            dstTag.textContent = `الترجمة (${LANG[lang].name})`;
-        }
-
-        // ========== Rotation Indicator ==========
-        function updateRotation() {
-            rotAr.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'ar');
-            rotZh.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'zh-CN');
-            rotEn.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'en');
         }
 
         // ========== Init Recognizer ==========
@@ -283,19 +381,26 @@
             rec = new SR();
             rec.continuous = true;
             rec.interimResults = true;
-            rec.lang = LANGS_LIST[currentSensorLang];
+            rec.lang = srcLang;
 
             rec.onstart = () => {
-                // Keep listening
+                isRec = true;
+                micBtn.classList.add('rec');
+                waves.classList.add('on');
+                dot.classList.remove('on');
+                dot.classList.add('rec');
+                stxt.textContent = I18N[uiLang].listening;
+                micLabel.textContent = I18N[uiLang].speakNow;
             };
 
             rec.onend = () => {
-                // When it ends, rotate to next language and restart
-                if (isRec) {
-                    currentSensorLang = (currentSensorLang + 1) % LANGS_LIST.length;
-                    updateRotation();
-                    try { rec.start(); } catch (e) {}
-                }
+                isRec = false;
+                micBtn.classList.remove('rec');
+                waves.classList.remove('on');
+                dot.classList.remove('rec');
+                dot.classList.add('on');
+                stxt.textContent = I18N[uiLang].ready;
+                micLabel.textContent = I18N[uiLang].micHint;
             };
 
             rec.onresult = (event) => {
@@ -311,29 +416,20 @@
                     }
                 }
 
-                if (interimText) {
-                    srcTxt.textContent = interimText;
-                    // If we get interim results, this language is hearing something
-                    clearTimeout(speechTimeout);
-                    speechTimeout = setTimeout(() => {
-                        // Keep sensor in the current language
-                    }, 3000);
-                }
+                if (interimText) srcTxt.textContent = interimText;
 
                 if (finalText && finalText.trim().length > 1) {
-                    detectedLang = LANGS_LIST[currentSensorLang];
                     srcTxt.textContent = finalText;
-                    srcTag.textContent = `ما قلته (${LANG[detectedLang].name})`;
-                    stxt.textContent = `كشف: ${LANG[detectedLang].name}`;
-                    translate(finalText, detectedLang, targetLang);
+                    translate(finalText, srcLang, dstLang);
                 }
             };
 
             rec.onerror = (e) => {
-                // If no-speech or aborted, silently rotate
-                if (e.error !== 'no-speech' && e.error !== 'aborted') {
-                    stxt.textContent = `خطأ: ${e.error}`;
-                }
+                if (e.error === 'no-speech') stxt.textContent = I18N[uiLang].noSpeech;
+                else if (e.error === 'not-allowed') stxt.textContent = I18N[uiLang].micDenied;
+                isRec = false;
+                micBtn.classList.remove('rec');
+                waves.classList.remove('on');
             };
         }
 
@@ -345,7 +441,7 @@
                 return;
             }
 
-            dstTxt.textContent = 'جاري الترجمة...';
+            dstTxt.textContent = I18N[uiLang].translating;
 
             try {
                 const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
@@ -358,10 +454,10 @@
                     lastSpoken = trans;
                     speak(trans, to);
                 } else {
-                    dstTxt.textContent = 'خطأ في الترجمة';
+                    dstTxt.textContent = I18N[uiLang].transError;
                 }
             } catch (e) {
-                dstTxt.textContent = 'تحقق من الإنترنت';
+                dstTxt.textContent = I18N[uiLang].transNoNet;
             }
         }
 
@@ -386,59 +482,63 @@
         // ========== Start/Stop ==========
         function start() {
             if (isRec || !rec) return;
-            isRec = true;
-
-            currentSensorLang = 0;
-            updateRotation();
-
-            micBtn.classList.add('rec');
-            waves.classList.add('on');
-            dot.classList.remove('on');
-            dot.classList.add('rec');
-            stxt.textContent = 'يستمع... يدور بين اللغات';
-            micLabel.textContent = 'اتكلم بأي لغة';
-
-            try { rec.lang = LANGS_LIST[0]; rec.start(); } catch (e) {}
+            try { rec.start(); } catch (e) {}
         }
 
         function stop() {
             if (!isRec || !rec) return;
-            isRec = false;
-
-            clearTimeout(speechTimeout);
-
-            micBtn.classList.remove('rec');
-            waves.classList.remove('on');
-            dot.classList.remove('rec');
-            dot.classList.add('on');
-            stxt.textContent = 'جاهز';
-            micLabel.textContent = 'اضغط للتحدث';
-
             try { rec.stop(); } catch (e) {}
         }
 
         // ========== Init ==========
         initRec();
+        setUI('ar');
+        updateLabels();
 
         // ========== Events ==========
         micBtn.onclick = () => isRec ? stop() : start();
 
+        srcSelect.onchange = () => {
+            srcLang = srcSelect.value;
+            if (rec) rec.lang = srcLang;
+            updateLabels();
+        };
+
+        dstSelect.onchange = () => {
+            dstLang = dstSelect.value;
+            updateLabels();
+        };
+
+        swapBtn.onclick = () => {
+            const temp = srcLang;
+            srcLang = dstLang;
+            dstLang = temp;
+            srcSelect.value = srcLang;
+            dstSelect.value = dstLang;
+            if (rec) rec.lang = srcLang;
+            updateLabels();
+
+            const tempText = srcTxt.textContent;
+            srcTxt.textContent = dstTxt.textContent;
+            dstTxt.textContent = tempText;
+        };
+
         document.onkeydown = (e) => {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
                 e.preventDefault();
                 start();
             }
         };
 
         document.onkeyup = (e) => {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
                 e.preventDefault();
                 stop();
             }
         };
 
         speakBtn.onclick = () => {
-            if (lastSpoken) speak(lastSpoken, targetLang);
+            if (lastSpoken) speak(lastSpoken, dstLang);
         };
     </script>
 </body>
