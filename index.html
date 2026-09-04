@@ -26,37 +26,47 @@
 
         .header { text-align: center; padding: 15px 0; }
         .header h1 { font-size: 26px; background: linear-gradient(90deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header p { font-size: 12px; color: #666; margin-top: 5px; }
 
-        /* Detected Language Display */
-        .detected-display {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 15px;
+        /* Target Language Selector */
+        .target-section {
             background: rgba(255,255,255,0.05);
             border-radius: 15px;
+            padding: 15px;
             margin: 10px 0;
-        }
-
-        .detected-side {
             text-align: center;
         }
 
-        .detected-side .flag { font-size: 35px; }
-        .detected-side .name { font-size: 14px; color: #888; margin-top: 3px; }
-        .detected-side .active { color: #00ff88; font-weight: 700; }
-
-        .detected-arrow {
-            font-size: 24px;
-            color: #00ff88;
-            animation: arrowPulse 1s infinite;
+        .target-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 10px;
         }
 
-        @keyframes arrowPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
+        .target-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .target-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #888;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .target-btn .emoji { font-size: 24px; display: block; margin-bottom: 5px; }
+
+        .target-btn.active {
+            border-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.15);
+            color: #ffd93d;
         }
 
         /* Status */
@@ -125,7 +135,7 @@
         .bar:nth-child(5) { animation-delay: 0.32s; }
         @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 30px; } }
 
-        /* Translation Cards */
+        /* Cards */
         .cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .card { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; min-height: 60px; position: relative; }
         .card.src { border-right: 3px solid #00ff88; }
@@ -142,24 +152,29 @@
     <div class="app">
         <div class="header">
             <h1>⚡ مترجم فوري</h1>
-            <p>يتعرف على اللغة تلقائياً من الصوت</p>
         </div>
 
-        <div class="detected-display">
-            <div class="detected-side">
-                <div class="flag" id="srcFlag">🎤</div>
-                <div class="name" id="srcName">في انتظار الصوت...</div>
-            </div>
-            <div class="detected-arrow">→</div>
-            <div class="detected-side">
-                <div class="flag" id="dstFlag">🔊</div>
-                <div class="name" id="dstName">الترجمة</div>
+        <div class="target-section">
+            <div class="target-label">ترجم إلى:</div>
+            <div class="target-btns">
+                <button class="target-btn active" id="btnZh" onclick="setTarget('zh-CN')">
+                    <span class="emoji">🇨🇳</span>
+                    صيني
+                </button>
+                <button class="target-btn" id="btnEn" onclick="setTarget('en')">
+                    <span class="emoji">🇺🇸</span>
+                    إنجليزي
+                </button>
+                <button class="target-btn" id="btnAr" onclick="setTarget('ar')">
+                    <span class="emoji">🇸🇦</span>
+                    عربي
+                </button>
             </div>
         </div>
 
         <div class="status-bar">
             <div class="dot" id="dot"></div>
-            <span class="status-text" id="stxt">جاهز - اضغط للتحدث</span>
+            <span class="status-text" id="stxt">جاهز</span>
         </div>
 
         <div class="mic-area">
@@ -183,28 +198,29 @@
             </div>
             <div class="arrow">↓</div>
             <div class="card dst">
-                <div class="tag" id="dstTag">الترجمة</div>
+                <div class="tag" id="dstTag">الترجمة (صيني)</div>
                 <div class="txt" id="dstTxt">...</div>
                 <button class="speak-btn" id="speakBtn">🔊</button>
             </div>
         </div>
 
-        <div class="footer">يكتشف اللغة تلقائياً ويترجم فوراً</div>
+        <div class="footer">اختر اللغة المطلوب الترجمة إليها - ثم تحدث</div>
     </div>
 
     <script>
         // ========== Config ==========
         const LANG = {
-            'ar': { name: 'العربية', flag: '🇸🇦', to: 'zh-CN', toName: '中文', toFlag: '🇨🇳' },
-            'zh-CN': { name: '中文', flag: '🇨🇳', to: 'ar', toName: 'العربية', toFlag: '🇸🇦' },
-            'en': { name: 'English', flag: '🇺🇸', to: 'ar', toName: 'العربية', toFlag: '🇸🇦' }
+            'ar': { name: 'العربية', flag: '🇸🇦' },
+            'zh-CN': { name: '中文', flag: '🇨🇳' },
+            'en': { name: 'English', flag: '🇺🇸' }
         };
 
         // ========== State ==========
+        let targetLang = 'zh-CN';
         let isRec = false;
         let rec = null;
         let lastSpoken = '';
-        let currentLang = 'ar';
+        let detectedLang = 'ar';
 
         // ========== Elements ==========
         const micBtn = document.getElementById('micBtn');
@@ -213,14 +229,13 @@
         const dstTxt = document.getElementById('dstTxt');
         const srcTag = document.getElementById('srcTag');
         const dstTag = document.getElementById('dstTag');
-        const srcFlag = document.getElementById('srcFlag');
-        const srcName = document.getElementById('srcName');
-        const dstFlag = document.getElementById('dstFlag');
-        const dstName = document.getElementById('dstName');
         const dot = document.getElementById('dot');
         const stxt = document.getElementById('stxt');
         const waves = document.getElementById('waves');
         const speakBtn = document.getElementById('speakBtn');
+        const btnZh = document.getElementById('btnZh');
+        const btnEn = document.getElementById('btnEn');
+        const btnAr = document.getElementById('btnAr');
 
         // ========== Check Browser ==========
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -229,10 +244,18 @@
             micBtn.disabled = true;
         } else {
             dot.classList.add('on');
-            stxt.textContent = 'جاهز';
         }
 
-        // ========== Detect Language from Text ==========
+        // ========== Set Target Language ==========
+        function setTarget(lang) {
+            targetLang = lang;
+            btnZh.classList.toggle('active', lang === 'zh-CN');
+            btnEn.classList.toggle('active', lang === 'en');
+            btnAr.classList.toggle('active', lang === 'ar');
+            dstTag.textContent = `الترجمة (${LANG[lang].name})`;
+        }
+
+        // ========== Detect Language ==========
         function detectLanguage(text) {
             let ar = 0, zh = 0, en = 0;
             
@@ -244,25 +267,10 @@
             }
 
             const max = Math.max(ar, zh, en);
-            if (max === 0) return currentLang;
+            if (max === 0) return 'ar';
             if (ar === max) return 'ar';
             if (zh === max) return 'zh-CN';
             return 'en';
-        }
-
-        // ========== Update UI for Language ==========
-        function updateLangUI(lang) {
-            const config = LANG[lang];
-            srcFlag.textContent = config.flag;
-            srcName.textContent = config.name;
-            srcName.classList.add('active');
-            
-            const toConfig = LANG[config.to];
-            dstFlag.textContent = toConfig.flag;
-            dstName.textContent = toConfig.name;
-            
-            srcTag.textContent = `ما قلته (${config.name})`;
-            dstTag.textContent = `الترجمة (${toConfig.name})`;
         }
 
         // ========== Init Recognizer ==========
@@ -279,7 +287,7 @@
                 dot.classList.remove('on');
                 dot.classList.add('rec');
                 stxt.textContent = 'أستمع...';
-                micLabel.textContent = 'اتكلم الآن - أي لغة';
+                micLabel.textContent = 'اتكلم الآن';
             };
 
             rec.onend = () => {
@@ -308,28 +316,17 @@
                 if (interimText) srcTxt.textContent = interimText;
 
                 if (finalText && finalText.trim().length > 1) {
-                    // Detect language from text
-                    const detected = detectLanguage(finalText);
-                    currentLang = detected;
-                    updateLangUI(detected);
-                    
+                    detectedLang = detectLanguage(finalText);
                     srcTxt.textContent = finalText;
-                    stxt.textContent = `تم كشف: ${LANG[detected].name}`;
-                    
-                    // Auto-switch recognizer language for next utterance
-                    try { rec.lang = detected; } catch (e) {}
-                    
-                    // Translate
-                    translate(finalText, detected, LANG[detected].to);
+                    srcTag.textContent = `ما قلته (${LANG[detectedLang].name})`;
+                    stxt.textContent = `تم كشف: ${LANG[detectedLang].name}`;
+                    translate(finalText, detectedLang, targetLang);
                 }
             };
 
             rec.onerror = (e) => {
-                if (e.error === 'no-speech') {
-                    stxt.textContent = 'لم أسمع صوتاً';
-                } else if (e.error === 'not-allowed') {
-                    stxt.textContent = 'سمح بالوصول للميكروفون';
-                }
+                if (e.error === 'no-speech') stxt.textContent = 'لم أسمع صوتاً';
+                else if (e.error === 'not-allowed') stxt.textContent = 'سمح بالوصول';
                 isRec = false;
                 micBtn.classList.remove('rec');
                 waves.classList.remove('on');
@@ -338,6 +335,12 @@
 
         // ========== Translate ==========
         async function translate(text, from, to) {
+            if (from === to) {
+                dstTxt.textContent = text;
+                lastSpoken = text;
+                return;
+            }
+
             dstTxt.textContent = 'جاري الترجمة...';
 
             try {
@@ -408,9 +411,7 @@
         };
 
         speakBtn.onclick = () => {
-            if (lastSpoken) {
-                speak(lastSpoken, LANG[currentLang].to);
-            }
+            if (lastSpoken) speak(lastSpoken, targetLang);
         };
     </script>
 </body>
