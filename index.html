@@ -24,17 +24,8 @@
             flex-direction: column;
         }
 
-        .header {
-            text-align: center;
-            padding: 20px 0 10px;
-        }
-
-        .header h1 {
-            font-size: 26px;
-            background: linear-gradient(90deg, #00d4ff, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .header { text-align: center; padding: 20px 0 10px; }
+        .header h1 { font-size: 26px; background: linear-gradient(90deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         .status-bar {
             display: flex;
@@ -47,43 +38,29 @@
             margin: 10px 0;
         }
 
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #666;
-        }
-
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #666; }
         .dot.on { background: #00ff88; }
         .dot.rec { background: #ff4444; animation: blink 0.5s infinite; }
+        .dot.err { background: #ff0000; }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .status-text { font-size: 13px; color: #888; }
 
-        .speakers {
-            display: flex;
-            gap: 10px;
+        .log-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px;
             margin: 10px 0;
+            max-height: 100px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            color: #00ff88;
         }
 
-        .speaker {
-            flex: 1;
-            background: rgba(255,255,255,0.06);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .speaker.active { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); }
-        .speaker .emoji { font-size: 28px; }
-        .speaker .name { font-size: 12px; color: #888; margin-top: 5px; }
-        .speaker .lang { font-size: 16px; font-weight: 700; color: #00d4ff; }
+        .log-line { margin: 2px 0; }
+        .log-line.error { color: #ff4444; }
+        .log-line.info { color: #00d4ff; }
 
         .mic-area {
             flex: 1;
@@ -95,15 +72,14 @@
         }
 
         .mic-btn {
-            width: 140px;
-            height: 140px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             background: linear-gradient(145deg, #00d4ff, #0088cc);
             border: none;
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 0 50px rgba(0, 212, 255, 0.4);
-            position: relative;
         }
 
         .mic-btn:hover { transform: scale(1.05); }
@@ -114,122 +90,54 @@
             animation: pulse 1s infinite;
         }
 
+        .mic-btn:disabled {
+            background: #333;
+            cursor: not-allowed;
+            animation: none;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.08); }
         }
 
-        .mic-icon { font-size: 55px; }
-        .mic-label { margin-top: 15px; font-size: 15px; color: #888; }
+        .mic-icon { font-size: 60px; }
+        .mic-label { margin-top: 15px; font-size: 16px; color: #888; }
 
-        .waves {
-            display: none;
-            justify-content: center;
-            gap: 3px;
-            margin-top: 15px;
-            height: 35px;
-            align-items: center;
-        }
-
+        .waves { display: none; justify-content: center; gap: 3px; margin-top: 15px; height: 35px; align-items: center; }
         .waves.on { display: flex; }
-
-        .bar {
-            width: 4px;
-            height: 10px;
-            background: #00ff88;
-            border-radius: 2px;
-            animation: wave 0.5s ease-in-out infinite;
-        }
-
+        .bar { width: 4px; height: 10px; background: #00ff88; border-radius: 2px; animation: wave 0.5s ease-in-out infinite; }
         .bar:nth-child(1) { animation-delay: 0s; }
         .bar:nth-child(2) { animation-delay: 0.08s; }
         .bar:nth-child(3) { animation-delay: 0.16s; }
         .bar:nth-child(4) { animation-delay: 0.24s; }
         .bar:nth-child(5) { animation-delay: 0.32s; }
+        @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 35px; } }
 
-        @keyframes wave {
-            0%, 100% { height: 8px; }
-            50% { height: 35px; }
-        }
-
-        .cards {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .card {
-            background: rgba(255,255,255,0.06);
-            border-radius: 12px;
-            padding: 12px;
-            min-height: 60px;
-            position: relative;
-        }
-
+        .cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .card { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; min-height: 60px; position: relative; }
         .card.src { border-right: 3px solid #00ff88; }
         .card.dst { border-left: 3px solid #ffd93d; }
-
         .card .tag { font-size: 10px; color: #666; margin-bottom: 5px; }
         .card .txt { font-size: 17px; line-height: 1.5; color: #ddd; }
-
-        .card .speak-btn {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255, 217, 61, 0.2);
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
+        .card .speak-btn { position: absolute; bottom: 10px; left: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 217, 61, 0.2); border: none; font-size: 14px; cursor: pointer; }
         .arrow { text-align: center; color: #00ff88; font-size: 18px; }
 
-        .hist-title { font-size: 12px; color: #666; margin-bottom: 6px; }
-        
-        .hist-list { max-height: 100px; overflow-y: auto; }
+        .footer { text-align: center; padding: 10px; color: #444; font-size: 10px; }
 
-        .hist-item {
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            padding: 8px;
-            margin-bottom: 5px;
-            font-size: 11px;
-            border-right: 2px solid #00ff88;
-        }
-
-        .hist-item .h-src { color: #888; }
-        .hist-item .h-dst { color: #ffd93d; }
-
-        .footer {
-            text-align: center;
-            padding: 10px;
-            color: #444;
-            font-size: 10px;
-        }
-
-        .lang-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
+        .permission-box {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            border-radius: 10px;
+            padding: 15px;
             margin: 10px 0;
+            text-align: center;
+            display: none;
         }
 
-        .lang-chip {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            background: rgba(255,255,255,0.05);
-            color: #666;
-            transition: all 0.3s;
-        }
-
-        .lang-chip.ar { border: 1px solid #00ff88; color: #00ff88; }
-        .lang-chip.zh { border: 1px solid #ffd93d; color: #ffd93d; }
-        .lang-chip.en { border: 1px solid #00d4ff; color: #00d4ff; }
+        .permission-box.show { display: block; }
+        .permission-box p { color: #ff4444; font-size: 13px; margin-bottom: 10px; }
+        .permission-btn { background: #ff4444; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -240,33 +148,23 @@
 
         <div class="status-bar">
             <div class="dot" id="dot"></div>
-            <span class="status-text" id="stxt">جاهز - يسمع 3 لغات</span>
+            <span class="status-text" id="stxt">جاري التحقق...</span>
         </div>
 
-        <div class="lang-indicator">
-            <div class="lang-chip ar" id="arChip">🇸🇦 عربي</div>
-            <div class="lang-chip zh" id="zhChip">🇨🇳 صيني</div>
-            <div class="lang-chip en" id="enChip">🇺🇸 إنجليزي</div>
+        <div class="permission-box" id="permBox">
+            <p>يجب السماح بالوصول للميكروفون</p>
+            <button class="permission-btn" id="permBtn">تفعيل الميكروفون</button>
         </div>
 
-        <div class="speakers">
-            <div class="speaker" id="spk1">
-                <div class="emoji">🎤</div>
-                <div class="name">المتحدث</div>
-                <div class="lang" id="spk1Lang">...</div>
-            </div>
-            <div class="speaker" id="spk2">
-                <div class="emoji">🔊</div>
-                <div class="name">الترجمة</div>
-                <div class="lang" id="spk2Lang">...</div>
-            </div>
+        <div class="log-box" id="logBox">
+            <div class="log-line info">جاري التحقق من المتصفح...</div>
         </div>
 
         <div class="mic-area">
-            <button class="mic-btn" id="micBtn">
+            <button class="mic-btn" id="micBtn" disabled>
                 <span class="mic-icon">🎤</span>
             </button>
-            <div class="mic-label">اضغط وابدأ بالتحدث</div>
+            <div class="mic-label" id="micLabel">جاري التحميل...</div>
             <div class="waves" id="waves">
                 <div class="bar"></div>
                 <div class="bar"></div>
@@ -289,13 +187,23 @@
             </div>
         </div>
 
-        <div class="hist-title">📝 آخر الترجمات</div>
-        <div class="hist-list" id="histList"></div>
-
         <div class="footer">يسمع 3 لغات في نفس الوقت</div>
     </div>
 
     <script>
+        // ========== Elements ==========
+        const micBtn = document.getElementById('micBtn');
+        const micLabel = document.getElementById('micLabel');
+        const srcTxt = document.getElementById('srcTxt');
+        const dstTxt = document.getElementById('dstTxt');
+        const dot = document.getElementById('dot');
+        const stxt = document.getElementById('stxt');
+        const waves = document.getElementById('waves');
+        const logBox = document.getElementById('logBox');
+        const permBox = document.getElementById('permBox');
+        const permBtn = document.getElementById('permBtn');
+        const speakBtn = document.getElementById('speakBtn');
+
         // ========== Config ==========
         const LANG = {
             'ar': { name: 'العربية', flag: '🇸🇦', to: 'zh-CN', toName: '中文', toFlag: '🇨🇳' },
@@ -308,135 +216,123 @@
         let recognizers = {};
         let lastSpoken = '';
         let detectedLang = null;
-        let isProcessing = false;
 
-        // ========== Elements ==========
-        const micBtn = document.getElementById('micBtn');
-        const srcTxt = document.getElementById('srcTxt');
-        const dstTxt = document.getElementById('dstTxt');
-        const dot = document.getElementById('dot');
-        const stxt = document.getElementById('stxt');
-        const waves = document.getElementById('waves');
-        const spk1 = document.getElementById('spk1');
-        const spk2 = document.getElementById('spk2');
-        const spk1Lang = document.getElementById('spk1Lang');
-        const spk2Lang = document.getElementById('spk2Lang');
-        const speakBtn = document.getElementById('speakBtn');
-        const histList = document.getElementById('histList');
-        const arChip = document.getElementById('arChip');
-        const zhChip = document.getElementById('zhChip');
-        const enChip = document.getElementById('enChip');
-
-        // ========== Check Browser ==========
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) {
-            stxt.textContent = 'استخدم Chrome';
-            micBtn.disabled = true;
-        } else {
-            dot.classList.add('on');
-            stxt.textContent = 'جاهز - يسمع 3 لغات';
-            initAllRec();
+        // ========== Logging ==========
+        function log(msg, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logBox.appendChild(line);
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // ========== Init All Recognizers ==========
-        function initAllRec() {
+        // ========== Check Browser ==========
+        function checkBrowser() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SR) {
+                log('المتصفح لا يدعم Speech Recognition', 'error');
+                stxt.textContent = 'المتصفح لا يدعم这项功能';
+                micBtn.disabled = true;
+                micLabel.textContent = 'استخدم Chrome';
+                dot.classList.add('err');
+                return false;
+            }
+
+            log('Speech Recognition مدعوم', 'info');
+            return true;
+        }
+
+        // ========== Request Microphone Permission ==========
+        async function requestMicPermission() {
+            try {
+                log('طلب صلاحية الميكروفون...', 'info');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(t => t.stop());
+                log('تم الحصول على صلاحية الميكروفون', 'info');
+                permBox.classList.remove('show');
+                return true;
+            } catch (err) {
+                log(`خطأ في الصلاحية: ${err.message}`, 'error');
+                permBox.classList.add('show');
+                return false;
+            }
+        }
+
+        // ========== Init Recognizers ==========
+        function initRecognizers() {
             ['ar', 'zh-CN', 'en'].forEach(lang => {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
                 const r = new SR();
                 r.continuous = true;
                 r.interimResults = true;
                 r.lang = lang;
                 r._lang = lang;
 
-                r.onstart = () => {
-                    updateLangChip(lang, true);
-                };
+                r.onstart = () => log(`${lang} started`, 'info');
 
                 r.onresult = (event) => {
-                    handleResult(event, lang);
+                    let finalText = '';
+                    let interimText = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const text = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalText += text;
+                        } else {
+                            interimText += text;
+                        }
+                    }
+
+                    if (interimText) srcTxt.textContent = interimText;
+
+                    if (finalText && finalText.trim().length > 1) {
+                        log(`[${lang}] ${finalText}`, 'info');
+                        processText(finalText, lang);
+                    }
                 };
 
                 r.onerror = (e) => {
-                    if (e.error !== 'no-speech' && e.error !== 'aborted') {
-                        console.log(`${lang} error: ${e.error}`);
+                    if (e.error === 'no-speech') {
+                        log(`${lang}: لا يوجد صوت`, 'info');
+                    } else if (e.error === 'not-allowed') {
+                        log(`${lang}: صلاحية مرفوضة`, 'error');
+                    } else if (e.error !== 'aborted') {
+                        log(`${lang}: ${e.error}`, 'error');
                     }
                 };
 
                 r.onend = () => {
-                    updateLangChip(lang, false);
+                    log(`${lang} ended`, 'info');
                     if (isRec) {
                         setTimeout(() => {
                             try { r.start(); } catch (e) {}
-                        }, 100);
+                        }, 200);
                     }
                 };
 
                 recognizers[lang] = r;
             });
+
+            log('تم إنشاء 3 مكتبات صوت', 'info');
         }
 
-        // ========== Update Language Chip ==========
-        function updateLangChip(lang, active) {
-            const chip = lang === 'ar' ? arChip : lang === 'zh-CN' ? zhChip : enChip;
-            if (active) {
-                chip.style.background = 'rgba(255,255,255,0.15)';
-            } else {
-                chip.style.background = 'rgba(255,255,255,0.05)';
-            }
-        }
+        // ========== Process Text ==========
+        function processText(text, lang) {
+            const config = LANG[lang];
+            if (!config) return;
 
-        // ========== Handle Result ==========
-        function handleResult(event, lang) {
-            if (isProcessing) return;
+            detectedLang = lang;
+            srcTxt.textContent = text;
+            stxt.textContent = `${config.flag} ${config.name} → ${config.toFlag} ${config.toName}`;
 
-            let finalText = '';
-            let interimText = '';
-
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const text = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalText += text;
-                } else {
-                    interimText += text;
-                }
-            }
-
-            if (interimText) {
-                srcTxt.textContent = interimText;
-            }
-
-            if (finalText && finalText.trim().length > 2) {
-                isProcessing = true;
-                detectedLang = lang;
-                srcTxt.textContent = finalText;
-                
-                const config = LANG[lang];
-                spk1Lang.textContent = config.name;
-                spk2Lang.textContent = config.toName;
-                stxt.textContent = `تم كشف: ${config.name}`;
-
-                translate(finalText, lang, config.to);
-
-                // Pause other recognizers briefly
-                Object.keys(recognizers).forEach(key => {
-                    if (key !== lang) {
-                        try { recognizers[key].stop(); } catch (e) {}
-                    }
-                });
-
-                setTimeout(() => {
-                    isProcessing = false;
-                    Object.keys(recognizers).forEach(key => {
-                        if (isRec) {
-                            try { recognizers[key].start(); } catch (e) {}
-                        }
-                    });
-                }, 2000);
-            }
+            translate(text, lang, config.to);
         }
 
         // ========== Translate ==========
         async function translate(text, from, to) {
             dstTxt.textContent = 'جاري الترجمة...';
+            log(`ترجمة: ${from} → ${to}`, 'info');
 
             try {
                 const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
@@ -447,13 +343,15 @@
                     const trans = data.responseData.translatedText;
                     dstTxt.textContent = trans;
                     lastSpoken = trans;
-                    addHist(text, trans, LANG[from]?.flag, LANG[to]?.flag);
+                    log(`الترجمة: ${trans}`, 'info');
                     speak(trans, to);
                 } else {
                     dstTxt.textContent = 'خطأ في الترجمة';
+                    log('خطأ في الترجمة', 'error');
                 }
             } catch (e) {
                 dstTxt.textContent = 'تحقق من الإنترنت';
+                log(`خطأ: ${e.message}`, 'error');
             }
         }
 
@@ -471,25 +369,30 @@
             if (v) u.voice = v;
 
             window.speechSynthesis.speak(u);
+            log(`تشغيل الصوت: ${lang}`, 'info');
         }
 
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => {
+            log('الأصوات جاهزة', 'info');
+        };
 
         // ========== Start/Stop ==========
         function start() {
             if (isRec) return;
             isRec = true;
-            
+
             micBtn.classList.add('rec');
             waves.classList.add('on');
             dot.classList.remove('on');
             dot.classList.add('rec');
-            stxt.textContent = 'يسمع 3 لغات...';
-            spk1.classList.add('active');
+            stxt.textContent = 'يسمع...';
+            micLabel.textContent = 'اتكلم بأي لغة';
 
             Object.values(recognizers).forEach(r => {
                 try { r.start(); } catch (e) {}
             });
+
+            log('بدء الاستماع', 'info');
         }
 
         function stop() {
@@ -501,37 +404,44 @@
             dot.classList.remove('rec');
             dot.classList.add('on');
             stxt.textContent = 'جاهز';
-            spk1.classList.remove('active');
+            micLabel.textContent = 'اضغط للتحدث';
 
             Object.values(recognizers).forEach(r => {
                 try { r.stop(); } catch (e) {}
             });
+
+            log('إيقاف الاستماع', 'info');
         }
 
-        // ========== History ==========
-        function addHist(src, dst, f1, f2) {
-            const d = document.createElement('div');
-            d.className = 'hist-item';
-            d.innerHTML = `<div class="h-src">${f1} ${src}</div><div class="h-dst">${f2} ${dst}</div>`;
-            histList.insertBefore(d, histList.firstChild);
-            while (histList.children.length > 8) histList.removeChild(histList.lastChild);
+        // ========== Init ==========
+        async function init() {
+            log('جاري التهيئة...', 'info');
+
+            if (!checkBrowser()) return;
+
+            const hasMic = await requestMicPermission();
+            if (!hasMic) {
+                micLabel.textContent = 'سمح بالوصول للميكروفون';
+                return;
+            }
+
+            initRecognizers();
+
+            micBtn.disabled = false;
+            micLabel.textContent = 'اضغط للتحدث';
+            dot.classList.add('on');
+            stxt.textContent = 'جاهز';
+            log('جاهز!', 'info');
         }
 
         // ========== Events ==========
-        micBtn.onclick = () => isRec ? stop() : start();
-
-        document.onkeydown = (e) => {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                start();
-            }
+        micBtn.onclick = () => {
+            if (micBtn.disabled) return;
+            isRec ? stop() : start();
         };
 
-        document.onkeyup = (e) => {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                stop();
-            }
+        permBtn.onclick = () => {
+            requestMicPermission();
         };
 
         speakBtn.onclick = () => {
@@ -539,6 +449,9 @@
                 speak(lastSpoken, LANG[detectedLang].to);
             }
         };
+
+        // ========== Start ==========
+        init();
     </script>
 </body>
 </html>
