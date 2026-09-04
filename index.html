@@ -641,26 +641,53 @@
                 if (enCandidates.length > 0) return enCandidates[0];
             }
 
-            // 5) Last resort - any voice
-            return voices[0] || null;
+            // No matching voice - return null so we use the online TTS fallback
+            return null;
         }
 
         function speak(text, lang) {
             if (!text) return;
             try { window.speechSynthesis.cancel(); } catch (e) {}
 
+            const v = pickVoice(lang);
+
+            // If no matching local voice (e.g. missing Arabic voice on Windows),
+            // use the online Google TTS fallback - always works for ar/zh/en
+            if (!v) {
+                speakOnline(text, lang);
+                return;
+            }
+
             const u = new SpeechSynthesisUtterance(text);
             u.lang = lang;
             u.rate = 1;
             u.pitch = 1;
-
-            const v = pickVoice(lang);
-            if (v) {
-                u.voice = v;
-                u.lang = v.lang; // force to the actual voice language
-            }
+            u.voice = v;
+            u.lang = v.lang; // force to the actual voice language
 
             window.speechSynthesis.speak(u);
+        }
+
+        // Online TTS fallback (Google endpoint) - plays via <audio>, no CORS needed
+        // Works for ar / zh / en (and most languages) without installing voices
+        function speakOnline(text, lang) {
+            try {
+                if (window.ttsAudio) {
+                    window.ttsAudio.pause();
+                    window.ttsAudio = null;
+                }
+                const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
+                if (!short.trim()) return;
+                const map = { 'ar': 'ar', 'zh-CN': 'zh-CN', 'zh': 'zh-CN', 'en': 'en' };
+                const tl = map[lang] || 'ar';
+                const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`;
+                const a = new Audio(url);
+                a.volume = 1;
+                a.play().catch(() => {
+                    stxt.textContent = I18N[uiLang].ready;
+                });
+                window.ttsAudio = a;
+            } catch (e) {}
         }
 
         // ========== Start/Stop (continuous) ==========
