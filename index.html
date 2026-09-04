@@ -169,6 +169,64 @@
         .card .speak-btn { position: absolute; bottom: 10px; left: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 217, 61, 0.2); border: none; font-size: 14px; cursor: pointer; }
         .arrow { text-align: center; color: #00ff88; font-size: 18px; }
 
+        /* Start Overlay */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 10, 26, 0.98);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            transition: opacity 0.4s;
+        }
+
+        .overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .overlay .big-mic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #00d4ff, #0088cc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 55px;
+            box-shadow: 0 0 60px rgba(0, 212, 255, 0.5);
+            animation: pulse 1.5s infinite;
+            cursor: pointer;
+        }
+
+        .overlay .start-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .overlay .start-sub {
+            font-size: 14px;
+            color: #888;
+            padding: 0 30px;
+            text-align: center;
+        }
+
+        .overlay .start-btn {
+            padding: 14px 40px;
+            border-radius: 40px;
+            border: none;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            color: #0a0a1a;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .overlay .start-btn:hover { transform: scale(1.05); }
+
         /* History */
         .hist-title { font-size: 12px; color: #666; margin-bottom: 6px; }
         .hist-list { max-height: 90px; overflow-y: auto; }
@@ -259,6 +317,14 @@
         <div class="footer" data-i18n="footer">تحدث بقولك التلقائي - الترجمة فورية</div>
     </div>
 
+    <!-- Start Overlay (first tap required by browser for mic) -->
+    <div class="overlay" id="startOverlay">
+        <div class="big-mic" id="bigMic">🎤</div>
+        <div class="start-title" data-i18n="startTitle">ترجمة صوتية تلقائية</div>
+        <div class="start-sub" data-i18n="startSub">اضغط للسماح بالميكروفون وسأستمع باستمرار وأترجم فورياً بكل اللغات</div>
+        <button class="start-btn" id="startBtn" data-i18n="startBtn">ابدأ الآن 🚀</button>
+    </div>
+
     <script>
         // ========== Translations ==========
         const I18N = {
@@ -281,7 +347,12 @@
                 translating: 'جاري الترجمة...',
                 transError: 'خطأ في الترجمة',
                 transNoNet: 'تحقق من الإنترنت',
-                autoOn: 'الوضع التلقائي مفعل'
+                autoOn: 'الوضع التلقائي مفعل',
+                startTitle: 'ترجمة صوتية تلقائية',
+                startSub: 'اضغط للسماح بالميكروفون وسأستمع باستمرار وأترجم فورياً بكل اللغات',
+                startBtn: 'ابدأ الآن 🚀',
+                starting: 'جارٍ التشغيل...',
+                started: 'يعمل تلقائياً - تحدث الآن'
             },
             zh: {
                 appTitle: '⚡ 即时翻译',
@@ -302,7 +373,12 @@
                 translating: '正在翻译...',
                 transError: '翻译错误',
                 transNoNet: '检查互联网',
-                autoOn: '自动模式已开启'
+                autoOn: '自动模式已开启',
+                startTitle: '自动语音翻译',
+                startSub: '点击允许麦克风，我会持续聆听并即时翻译',
+                startBtn: '立即开始 🚀',
+                starting: '正在启动...',
+                started: '全自动运行 - 请说话'
             },
             en: {
                 appTitle: '⚡ Instant Translator',
@@ -323,7 +399,12 @@
                 translating: 'Translating...',
                 transError: 'Translation error',
                 transNoNet: 'Check internet',
-                autoOn: 'Auto mode enabled'
+                autoOn: 'Auto mode enabled',
+                startTitle: 'Automatic Voice Translation',
+                startSub: 'Click to allow the mic - I will listen continuously and translate instantly',
+                startBtn: 'Start now 🚀',
+                starting: 'Starting...',
+                started: 'Running automatically - speak now'
             }
         };
 
@@ -615,12 +696,56 @@
         setUI('ar');
         updateLabels();
 
+        // ========== Auto Start ==========
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startBtn');
+
+        function beginAuto() {
+            startOverlay.classList.add('hidden');
+            stxt.textContent = I18N[uiLang].starting;
+            // Ask for mic permission inside the user gesture, then start
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then((stream) => {
+                        // Stop the local stream - SpeechRecognition uses its own mic
+                        stream.getTracks().forEach(t => t.stop());
+                        start();
+                        stxt.textContent = I18N[uiLang].started;
+                    })
+                    .catch((err) => {
+                        // mic denied - retry directly (user will get browser prompt if possible)
+                        start();
+                        if (err && err.name === 'NotAllowedError') {
+                            stxt.textContent = I18N[uiLang].micDenied;
+                            micBtn.classList.remove('rec');
+                            waves.classList.remove('on');
+                        }
+                    });
+            } else {
+                start();
+                stxt.textContent = I18N[uiLang].started;
+            }
+        }
+
+        if (startBtn) startBtn.onclick = beginAuto;
+        const bigMic = document.getElementById('bigMic');
+        if (bigMic) bigMic.onclick = beginAuto;
+
         // ========== Events ==========
         micBtn.onclick = () => isRec ? stop() : start();
 
         srcSelect.onchange = () => {
             srcLang = srcSelect.value;
-            if (rec) rec.lang = srcLang;
+            if (rec) {
+                rec.lang = srcLang;
+                // Restart to apply the new language immediately
+                if (isRec) {
+                    try {
+                        rec.stop();
+                        setTimeout(() => { start(); }, 300);
+                    } catch (e) {}
+                }
+            }
             updateLabels();
         };
 
