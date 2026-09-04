@@ -654,21 +654,13 @@
             const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
             if (!short.trim()) return;
 
-            const voicesApi = {
-                'ar': 'ar-EG-Hoda',
-                'zh-CN': 'zh-CN-XiaoxiaoNeural',
-                'en': 'en-US-JennyNeural'
-            };
-
-            // Provider chain: Google → StreamElements → local browser voice
+            // Provider chain: Google TTS (no-referrer!) → local browser voice
+            // NOTE: Google returns 404 when it receives a Referer header.
+            // referrerpolicy="no-referrer" strips it so the request succeeds.
             const chain = [
                 {
                     name: 'google',
                     url: `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`
-                },
-                {
-                    name: 'streamelements',
-                    url: `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(voicesApi[tl] || 'en-US-JennyNeural')}&text=${encodeURIComponent(short)}`
                 },
                 {
                     name: 'local',
@@ -698,8 +690,9 @@
                 return;
             }
 
-            const a = new Audio();
+            const a = document.createElement("audio");
             a.volume = 1;
+            a.setAttribute("referrerpolicy", "no-referrer");
             let done = false;
 
             const next = () => {
@@ -711,7 +704,7 @@
 
             a.addEventListener('playing', () => {
                 done = true;
-                stxt.textContent = '🔊 ' + (p.name === 'google' ? 'Google' : 'StreamElements');
+                stxt.textContent = '🔊 Google';
             });
             a.addEventListener('error', () => { stxt.textContent = '🔇 ' + p.name; next(); });
             a.play().catch((err) => { stxt.textContent = '🔇 ' + p.name; next(); });
