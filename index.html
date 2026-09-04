@@ -2,123 +2,568 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Translator - مترجم الصوت</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مترجم الصوت الفوري</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Arabic', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            background: linear-gradient(90deg, #64ffda, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #8892b0;
+            font-size: 14px;
+        }
+
+        /* Language Selector */
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .lang-box {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lang-box label {
+            display: block;
+            font-size: 11px;
+            color: #8892b0;
+            margin-bottom: 8px;
+        }
+
+        .lang-box select {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .lang-box select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .swap-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #64ffda, #4dd0b8);
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .swap-btn:hover {
+            transform: scale(1.1) rotate(180deg);
+        }
+
+        /* Talk Button */
+        .talk-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .talk-btn {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #64ffda, #4dd0b8);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+            box-shadow: 0 0 60px rgba(100, 255, 218, 0.4);
+        }
+
+        .talk-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .talk-btn:active {
+            transform: scale(0.95);
+        }
+
+        .talk-btn.listening {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
+            box-shadow: 0 0 80px rgba(255, 107, 107, 0.6);
+            animation: pulse-btn 1s infinite;
+        }
+
+        @keyframes pulse-btn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .mic-icon {
+            font-size: 60px;
+        }
+
+        .talk-label {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #8892b0;
+        }
+
+        .talk-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #5a6a8a;
+        }
+
+        /* Text Display */
+        .text-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .text-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            min-height: 80px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .text-card.original {
+            border-right: 3px solid #64ffda;
+        }
+
+        .text-card.translated {
+            border-left: 3px solid #ffd93d;
+        }
+
+        .text-card .label {
+            font-size: 11px;
+            color: #8892b0;
+            margin-bottom: 8px;
+        }
+
+        .text-card .content {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #ccd6f6;
+            word-wrap: break-word;
+        }
+
+        .text-card .play-btn {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 217, 61, 0.2);
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .text-card .play-btn:hover {
+            background: rgba(255, 217, 61, 0.4);
+        }
+
+        .arrow {
+            text-align: center;
+            font-size: 20px;
+            color: #64ffda;
+        }
+
+        /* Status */
+        .status {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            margin-left: 6px;
+        }
+
+        .status-dot.on {
+            background: #64ffda;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #8892b0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #5a6a8a;
+            font-size: 11px;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .header h1 { font-size: 26px; }
+            .talk-btn { width: 130px; height: 130px; }
+            .mic-icon { font-size: 50px; }
+            .text-card .content { font-size: 18px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
+    <div class="container">
+        <div class="header">
             <h1>🎤 مترجم الصوت</h1>
-            <p>تحدث بلغتك - ترجمة فورية</p>
-        </header>
+            <p>يعمل بالكامل في المتصفح - بدون خادم</p>
+        </div>
 
-        <!-- Language Selection -->
-        <div class="language-section">
-            <div class="language-card" id="myLanguageCard">
-                <span class="language-label">لغتي</span>
-                <select id="myLanguage">
-                    <option value="ar">العربية</option>
-                    <option value="zh">中文</option>
+        <div class="lang-selector">
+            <div class="lang-box">
+                <label>أنت تتحدث</label>
+                <select id="myLang">
+                    <option value="ar" selected>العربية</option>
+                    <option value="zh-CN">中文</option>
+                    <option value="en">English</option>
                 </select>
             </div>
-            
-            <button class="swap-btn" id="swapBtn" title="تبديل اللغات">
-                ⇄
-            </button>
-            
-            <div class="language-card" id="otherLanguageCard">
-                <span class="language-label">لغة الطرف الآخر</span>
-                <select id="otherLanguage">
-                    <option value="zh">中文</option>
+            <button class="swap-btn" id="swapBtn">⇄</button>
+            <div class="lang-box">
+                <label>تترجم إلى</label>
+                <select id="targetLang">
                     <option value="ar">العربية</option>
+                    <option value="zh-CN" selected>中文</option>
+                    <option value="en">English</option>
                 </select>
             </div>
         </div>
 
-        <!-- Connection Status -->
-        <div class="connection-status" id="connectionStatus">
-            <span class="status-dot"></span>
-            <span class="status-text">جاري الاتصال...</span>
+        <div class="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-text" id="statusText">جاري التحقق من المتصفح...</span>
         </div>
 
-        <!-- Main Talk Button -->
-        <div class="talk-section">
+        <div class="talk-area">
             <button class="talk-btn" id="talkBtn">
-                <div class="talk-btn-inner">
-                    <div class="mic-icon">🎤</div>
-                    <div class="talk-text">اضغط للتحدث</div>
-                </div>
-                <div class="pulse-ring"></div>
+                <span class="mic-icon">🎤</span>
             </button>
-            <p class="talk-hint">اضغط واحتفظ - اترك ليتوقف الترجمة</p>
+            <div class="talk-label">اضغط واثبت للتحدث</div>
+            <div class="talk-hint">أو اضغط على مسافة في الكيبورد</div>
         </div>
 
-        <!-- Translation Display -->
-        <div class="translation-section">
-            <div class="translation-card original">
-                <div class="card-header">
-                    <span class="lang-badge" id="originalLangBadge">العربية</span>
-                    <span class="card-title">الأصلي</span>
-                </div>
-                <div class="card-content" id="originalText">
-                    اضغط على زر麦克风 للبدء في التحدث...
-                </div>
+        <div class="text-section">
+            <div class="text-card original">
+                <div class="label" id="origLabel"> ما قلته</div>
+                <div class="content" id="origText">...</div>
             </div>
-
-            <div class="translation-arrow">↓</div>
-
-            <div class="translation-card translated">
-                <div class="card-header">
-                    <span class="lang-badge" id="translatedLangBadge">中文</span>
-                    <span class="card-title">الترجمة</span>
-                </div>
-                <div class="card-content" id="translatedText">
-                    Translation will appear here...
-                </div>
-                <button class="play-btn" id="playBtn" title="تشغيل الصوت">
-                    🔊
-                </button>
+            <div class="arrow">↓</div>
+            <div class="text-card translated">
+                <div class="label" id="transLabel">الترجمة</div>
+                <div class="content" id="transText">...</div>
+                <button class="play-btn" id="playBtn" title="تشغيل الصوت">🔊</button>
             </div>
         </div>
 
-        <!-- Settings -->
-        <div class="settings-section">
-            <button class="settings-btn" id="settingsBtn">⚙️ الإعدادات</button>
+        <div class="footer">
+            يعمل بدون إنترنت للetedict + إنترنت للترجمة فقط
         </div>
-
-        <!-- Settings Modal -->
-        <div class="modal" id="settingsModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>الإعدادات</h2>
-                    <button class="close-btn" id="closeModal">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="setting-group">
-                        <label>رابط الخادم (Backend URL)</label>
-                        <input type="text" id="serverUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
-                    </div>
-                    <div class="setting-group">
-                        <label>الصوت التلقائي</label>
-                        <label class="switch">
-                            <input type="checkbox" id="autoPlay" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <button class="save-btn" id="saveSettings">حفظ</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>صُنع بـ ❤️ للطلاب العرب والصينيين</p>
-        </footer>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        // ========== App State ==========
+        let isListening = false;
+        let recognition = null;
+        let myLang = 'ar';
+        let targetLang = 'zh-CN';
+        let lastTranslation = '';
+
+        // ========== Elements ==========
+        const talkBtn = document.getElementById('talkBtn');
+        const origText = document.getElementById('origText');
+        const transText = document.getElementById('transText');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const myLangSelect = document.getElementById('myLang');
+        const targetLangSelect = document.getElementById('targetLang');
+        const swapBtn = document.getElementById('swapBtn');
+        const playBtn = document.getElementById('playBtn');
+        const origLabel = document.getElementById('origLabel');
+        const transLabel = document.getElementById('transLabel');
+
+        // ========== Check Browser Support ==========
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            statusText.textContent = 'المتصفح لا يدعم التعرف على الصوت - استخدم Chrome';
+            talkBtn.disabled = true;
+            talkBtn.style.opacity = '0.5';
+        } else {
+            statusDot.classList.add('on');
+            statusText.textContent = 'جاهز - اضغط على الميكروفون للبدء';
+            initRecognition();
+        }
+
+        // ========== Speech Recognition Setup ==========
+        function initRecognition() {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = myLang;
+
+            recognition.onstart = () => {
+                isListening = true;
+                talkBtn.classList.add('listening');
+                statusText.textContent = 'جاري الاستماع...';
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                talkBtn.classList.remove('listening');
+                statusText.textContent = 'جاهز للتحدث مرة أخرى';
+            };
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (interimTranscript) {
+                    origText.textContent = interimTranscript;
+                }
+
+                if (finalTranscript) {
+                    origText.textContent = finalTranscript;
+                    translateText(finalTranscript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech error:', event.error);
+                if (event.error === 'not-allowed') {
+                    statusText.textContent = 'يجب السماح بالوصول للميكروفون';
+                } else if (event.error === 'no-speech') {
+                    statusText.textContent = 'لم يتم التقاط صوت - حاول مرة أخرى';
+                } else {
+                    statusText.textContent = 'خطأ: ' + event.error;
+                }
+                isListening = false;
+                talkBtn.classList.remove('listening');
+            };
+        }
+
+        // ========== Translation API (Free - MyMemory) ==========
+        async function translateText(text) {
+            if (!text.trim()) return;
+
+            transText.textContent = 'جاري الترجمة...';
+
+            try {
+                // MyMemory API - مجاني بدون مفتاح
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${myLang}|${targetLang}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.responseStatus === 200 && data.responseData) {
+                    const translated = data.responseData.translatedText;
+                    transText.textContent = translated;
+                    lastTranslation = translated;
+
+                    // Auto play translation
+                    speakTranslation(translated);
+                } else {
+                    transText.textContent = 'خطأ في الترجمة';
+                }
+            } catch (err) {
+                console.error('Translation error:', err);
+                transText.textContent = 'تحقق من اتصال الإنترنت';
+            }
+        }
+
+        // ========== Text to Speech ==========
+        function speakTranslation(text) {
+            if (!text) return;
+
+            // Stop any current speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = targetLang;
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+
+            // Try to find a matching voice
+            const voices = window.speechSynthesis.getVoices();
+            const targetVoice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Load voices
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
+
+        // ========== Event Listeners ==========
+        
+        // Talk button - press and hold
+        talkBtn.addEventListener('mousedown', startListening);
+        talkBtn.addEventListener('mouseup', stopListening);
+        talkBtn.addEventListener('mouseleave', stopListening);
+
+        // Touch events
+        talkBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startListening();
+        });
+        talkBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopListening();
+        });
+
+        // Keyboard - space bar
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isListening && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                startListening();
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && isListening) {
+                e.preventDefault();
+                stopListening();
+            }
+        });
+
+        // Swap languages
+        swapBtn.addEventListener('click', () => {
+            const temp = myLangSelect.value;
+            myLangSelect.value = targetLangSelect.value;
+            targetLangSelect.value = temp;
+            myLang = myLangSelect.value;
+            targetLang = targetLangSelect.value;
+            
+            // Swap texts
+            const tempText = origText.textContent;
+            origText.textContent = transText.textContent;
+            transText.textContent = tempText;
+        });
+
+        // Language change
+        myLangSelect.addEventListener('change', () => {
+            myLang = myLangSelect.value;
+            if (recognition) recognition.lang = myLang;
+        });
+
+        targetLangSelect.addEventListener('change', () => {
+            targetLang = targetLangSelect.value;
+        });
+
+        // Play button
+        playBtn.addEventListener('click', () => {
+            if (lastTranslation) {
+                speakTranslation(lastTranslation);
+            }
+        });
+
+        // ========== Functions ==========
+        function startListening() {
+            if (!recognition) return;
+            try {
+                recognition.lang = myLang;
+                recognition.start();
+            } catch (e) {
+                console.error('Start error:', e);
+            }
+        }
+
+        function stopListening() {
+            if (!recognition) return;
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.error('Stop error:', e);
+            }
+        }
+    </script>
 </body>
 </html>
