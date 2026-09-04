@@ -644,7 +644,99 @@
             return null;
         }
 
-        function speak(text, lang) {
+        // ===== Edge TTS (Microsoft neural voices - free, no key, ar/zh/en) =====
+        const EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+        const EDGE_WSS = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+
+        const EDGE_VOICES = {
+            en: 'en-US-AriaNeural',
+            zh: 'zh-CN-XiaoxiaoNeural',
+            ar: 'ar-EG-SalmaNeural'
+        };
+
+        // Speak via Microsoft Edge TTS over WebSocket.
+        // Resolves true if audio actually started playing (WebSocket delivered audio),
+        // false if anything failed (so we can fall back to a local voice).
+        function edgeSpeak(text, lang) {
+            const prefix = (lang || '').split('-')[0] || 'en';
+            const voice = EDGE_VOICES[prefix] || 'en-US-AriaNeural';
+
+            return new Promise((resolve) => {
+                let ws = null;
+                const chunks = [];
+                let played = false;
+                const reqId = Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+                const connId = Math.random().toString(16).slice(2);
+
+                const closeWs = () => { try { ws && ws.close(); } catch (e) {} };
+
+                const finish = (result) => {
+                    if (result && chunks.length) {
+                        const blob = new Blob(chunks, { type: 'audio/mpeg' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('audio');
+                        a.src = url;
+                        a.volume = 1;
+                        a.onplaying = () => { played = true; stxt.textContent = '🔊 Edge'; };
+                        a.onended = () => { try { URL.revokeObjectURL(url); } catch (e) {} };
+                        a.onerror = () => { try { URL.revokeObjectURL(url); } catch (e) {} resolve(false); closeWs(); };
+                        a.play().then(() => { played = true; setTimeout(() => resolve(true), 1500); }).catch(() => { resolve(false); closeWs(); });
+                        return;
+                    }
+                    closeWs();
+                    resolve(result === true);
+                };
+
+                try {
+                    ws = new WebSocket(`${EDGE_WSS}?TrustedClientToken=${EDGE_TOKEN}&ConnectionId=${connId}`);
+                } catch (e) { resolve(false); return; }
+
+                const timeout = setTimeout(() => finish(false), 12000);
+
+                ws.onopen = () => {
+                    const cfg = 'X-Timestamp:' + new Date().toString() + '\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' +
+                        '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":false,"wordBoundaryEnabled":true},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}';
+                    const ssml = 'X-RequestId:' + reqId + '\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:' + new Date().toString() + '\r\nPath:ssml\r\n\r\n' +
+                        '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="' + lang + '"><voice name="' + voice + '"><prosody rate="0%" pitch="0%">' +
+                        text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') +
+                        '</prosody></voice></speak>';
+                    ws.send(cfg);
+                    ws.send(ssml);
+                };
+
+                const SEP = new TextEncoder().encode('Path:audio\r\n');
+
+                ws.onmessage = (ev) => {
+                    if (typeof ev.data === 'string') {
+                        if (ev.data.includes('Path:turn.end')) { clearTimeout(timeout); finish(true); }
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const buf = new Uint8Array(reader.result);
+                        const idx = indexOfBytes(buf, SEP);
+                        if (idx !== -1) chunks.push(buf.slice(idx + SEP.length));
+                    };
+                    try { reader.readAsArrayBuffer(ev.data); } catch (e) {}
+                };
+
+                ws.onerror = () => { clearTimeout(timeout); finish(false); };
+                ws.onclose = () => { clearTimeout(timeout); if (!played) finish(false); };
+            });
+        }
+
+        function indexOfBytes(arr, sub) {
+            for (let i = 0; i <= arr.length - sub.length; i++) {
+                let match = true;
+                for (let j = 0; j < sub.length; j++) {
+                    if (arr[i + j] !== sub[j]) { match = false; break; }
+                }
+                if (match) return i;
+            }
+            return -1;
+        }
+
+        async function speak(text, lang) {
             if (!text) return;
             try { window.speechSynthesis.cancel(); } catch (e) {}
 
@@ -652,20 +744,22 @@
             const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
             if (!short.trim()) return;
 
-            // Use the local browser voice for this language if available
+            // 1) Microsoft Edge TTS (free, no key, natural Arabic/Chinese/English).
+            const played = await edgeSpeak(short, lang);
+            if (played) return;
+
+            // 2) Fallback - local browser voice if Edge failed.
             const v = pickVoice(lang);
             if (v) {
-                stxt.textContent = '🔊';
+                stxt.textContent = '🔊 Local';
                 const u = new SpeechSynthesisUtterance(short);
                 u.lang = v.lang;
                 u.rate = 1;
                 u.voice = v;
                 window.speechSynthesis.speak(u);
-                return;
+            } else {
+                stxt.textContent = '🔇 ' + prefix.toUpperCase();
             }
-
-            // No local voice - last resort: show the text clearly so it still works
-            stxt.textContent = '🔇 ' + prefix.toUpperCase();
         }
 
         // ========== Start/Stop (continuous) ==========
