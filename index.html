@@ -24,7 +24,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         .header {
             text-align: center;
             padding: 20px 0 10px;
@@ -37,7 +36,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Status Bar */
         .status-bar {
             display: flex;
             align-items: center;
@@ -64,12 +62,8 @@
             50% { opacity: 0.4; }
         }
 
-        .status-text {
-            font-size: 13px;
-            color: #888;
-        }
+        .status-text { font-size: 13px; color: #888; }
 
-        /* Speaker Cards */
         .speakers {
             display: flex;
             gap: 10px;
@@ -86,16 +80,11 @@
             transition: all 0.3s;
         }
 
-        .speaker.active {
-            border-color: #00ff88;
-            background: rgba(0, 255, 136, 0.1);
-        }
-
+        .speaker.active { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); }
         .speaker .emoji { font-size: 28px; }
         .speaker .name { font-size: 12px; color: #888; margin-top: 5px; }
         .speaker .lang { font-size: 16px; font-weight: 700; color: #00d4ff; }
 
-        /* Mic Button */
         .mic-area {
             flex: 1;
             display: flex;
@@ -131,14 +120,8 @@
         }
 
         .mic-icon { font-size: 55px; }
+        .mic-label { margin-top: 15px; font-size: 15px; color: #888; }
 
-        .mic-label {
-            margin-top: 15px;
-            font-size: 15px;
-            color: #888;
-        }
-
-        /* Waves */
         .waves {
             display: none;
             justify-content: center;
@@ -169,7 +152,6 @@
             50% { height: 35px; }
         }
 
-        /* Translation Cards */
         .cards {
             display: flex;
             flex-direction: column;
@@ -188,17 +170,8 @@
         .card.src { border-right: 3px solid #00ff88; }
         .card.dst { border-left: 3px solid #ffd93d; }
 
-        .card .tag {
-            font-size: 10px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .card .txt {
-            font-size: 17px;
-            line-height: 1.5;
-            color: #ddd;
-        }
+        .card .tag { font-size: 10px; color: #666; margin-bottom: 5px; }
+        .card .txt { font-size: 17px; line-height: 1.5; color: #ddd; }
 
         .card .speak-btn {
             position: absolute;
@@ -215,13 +188,9 @@
 
         .arrow { text-align: center; color: #00ff88; font-size: 18px; }
 
-        /* History */
         .hist-title { font-size: 12px; color: #666; margin-bottom: 6px; }
         
-        .hist-list {
-            max-height: 100px;
-            overflow-y: auto;
-        }
+        .hist-list { max-height: 100px; overflow-y: auto; }
 
         .hist-item {
             background: rgba(255,255,255,0.03);
@@ -241,6 +210,26 @@
             color: #444;
             font-size: 10px;
         }
+
+        .lang-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .lang-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .lang-chip.ar { border: 1px solid #00ff88; color: #00ff88; }
+        .lang-chip.zh { border: 1px solid #ffd93d; color: #ffd93d; }
+        .lang-chip.en { border: 1px solid #00d4ff; color: #00d4ff; }
     </style>
 </head>
 <body>
@@ -251,7 +240,13 @@
 
         <div class="status-bar">
             <div class="dot" id="dot"></div>
-            <span class="status-text" id="stxt">جاهز</span>
+            <span class="status-text" id="stxt">جاهز - يسمع 3 لغات</span>
+        </div>
+
+        <div class="lang-indicator">
+            <div class="lang-chip ar" id="arChip">🇸🇦 عربي</div>
+            <div class="lang-chip zh" id="zhChip">🇨🇳 صيني</div>
+            <div class="lang-chip en" id="enChip">🇺🇸 إنجليزي</div>
         </div>
 
         <div class="speakers">
@@ -297,7 +292,7 @@
         <div class="hist-title">📝 آخر الترجمات</div>
         <div class="hist-list" id="histList"></div>
 
-        <div class="footer">يكتشف اللغة تلقائياً من الصوت</div>
+        <div class="footer">يسمع 3 لغات في نفس الوقت</div>
     </div>
 
     <script>
@@ -310,9 +305,10 @@
 
         // ========== State ==========
         let isRec = false;
-        let rec = null;
+        let recognizers = {};
         let lastSpoken = '';
         let detectedLang = null;
+        let isProcessing = false;
 
         // ========== Elements ==========
         const micBtn = document.getElementById('micBtn');
@@ -327,6 +323,9 @@
         const spk2Lang = document.getElementById('spk2Lang');
         const speakBtn = document.getElementById('speakBtn');
         const histList = document.getElementById('histList');
+        const arChip = document.getElementById('arChip');
+        const zhChip = document.getElementById('zhChip');
+        const enChip = document.getElementById('enChip');
 
         // ========== Check Browser ==========
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -335,98 +334,104 @@
             micBtn.disabled = true;
         } else {
             dot.classList.add('on');
-            stxt.textContent = 'جاهز - اضغط للتحدث';
-            initRec();
+            stxt.textContent = 'جاهز - يسمع 3 لغات';
+            initAllRec();
         }
 
-        // ========== Init Speech Recognition ==========
-        function initRec() {
-            rec = new SR();
-            rec.continuous = true;
-            rec.interimResults = true;
-            rec.lang = 'ar';
+        // ========== Init All Recognizers ==========
+        function initAllRec() {
+            ['ar', 'zh-CN', 'en'].forEach(lang => {
+                const r = new SR();
+                r.continuous = true;
+                r.interimResults = true;
+                r.lang = lang;
+                r._lang = lang;
 
-            rec.onstart = () => {
-                isRec = true;
-                micBtn.classList.add('rec');
-                waves.classList.add('on');
-                dot.classList.remove('on');
-                dot.classList.add('rec');
-                stxt.textContent = 'أستمع...';
-                spk1.classList.add('active');
-            };
+                r.onstart = () => {
+                    updateLangChip(lang, true);
+                };
 
-            rec.onend = () => {
-                isRec = false;
-                micBtn.classList.remove('rec');
-                waves.classList.remove('on');
-                dot.classList.remove('rec');
-                dot.classList.add('on');
-                stxt.textContent = 'جاهز';
-                spk1.classList.remove('active');
-            };
+                r.onresult = (event) => {
+                    handleResult(event, lang);
+                };
 
-            rec.onresult = (event) => {
-                let final = '';
-                let interim = '';
-
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const t = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        final += t;
-                    } else {
-                        interim += t;
+                r.onerror = (e) => {
+                    if (e.error !== 'no-speech' && e.error !== 'aborted') {
+                        console.log(`${lang} error: ${e.error}`);
                     }
-                }
+                };
 
-                if (interim) srcTxt.textContent = interim;
+                r.onend = () => {
+                    updateLangChip(lang, false);
+                    if (isRec) {
+                        setTimeout(() => {
+                            try { r.start(); } catch (e) {}
+                        }, 100);
+                    }
+                };
 
-                if (final) {
-                    srcTxt.textContent = final;
-                    processText(final);
-                }
-            };
-
-            rec.onerror = (e) => {
-                if (e.error === 'no-speech') stxt.textContent = 'لم أسمع...';
-                else if (e.error === 'not-allowed') stxt.textContent = 'سمح بالوصول';
-                isRec = false;
-                micBtn.classList.remove('rec');
-                waves.classList.remove('on');
-            };
+                recognizers[lang] = r;
+            });
         }
 
-        // ========== Detect Language ==========
-        function detect(text) {
-            let ar = 0, zh = 0, en = 0;
-            
-            for (let c of text) {
-                const code = c.charCodeAt(0);
-                if ((code >= 0x0600 && code <= 0x06FF) || (code >= 0xFB50 && code <= 0xFDFF) || (code >= 0xFE70 && code <= 0xFEFF)) ar++;
-                else if (code >= 0x4E00 && code <= 0x9FFF) zh++;
-                else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) en++;
+        // ========== Update Language Chip ==========
+        function updateLangChip(lang, active) {
+            const chip = lang === 'ar' ? arChip : lang === 'zh-CN' ? zhChip : enChip;
+            if (active) {
+                chip.style.background = 'rgba(255,255,255,0.15)';
+            } else {
+                chip.style.background = 'rgba(255,255,255,0.05)';
+            }
+        }
+
+        // ========== Handle Result ==========
+        function handleResult(event, lang) {
+            if (isProcessing) return;
+
+            let finalText = '';
+            let interimText = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const text = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalText += text;
+                } else {
+                    interimText += text;
+                }
             }
 
-            const max = Math.max(ar, zh, en);
-            if (max === 0) return 'ar';
-            if (ar === max) return 'ar';
-            if (zh === max) return 'zh-CN';
-            return 'en';
-        }
+            if (interimText) {
+                srcTxt.textContent = interimText;
+            }
 
-        // ========== Process Text ==========
-        function processText(text) {
-            const from = detect(text);
-            detectedLang = from;
-            const config = LANG[from];
+            if (finalText && finalText.trim().length > 2) {
+                isProcessing = true;
+                detectedLang = lang;
+                srcTxt.textContent = finalText;
+                
+                const config = LANG[lang];
+                spk1Lang.textContent = config.name;
+                spk2Lang.textContent = config.toName;
+                stxt.textContent = `تم كشف: ${config.name}`;
 
-            // Update UI
-            spk1Lang.textContent = config.name;
-            spk2Lang.textContent = config.toName;
-            stxt.textContent = `${config.name} → ${config.toName}`;
+                translate(finalText, lang, config.to);
 
-            // Translate
-            translate(text, from, config.to);
+                // Pause other recognizers briefly
+                Object.keys(recognizers).forEach(key => {
+                    if (key !== lang) {
+                        try { recognizers[key].stop(); } catch (e) {}
+                    }
+                });
+
+                setTimeout(() => {
+                    isProcessing = false;
+                    Object.keys(recognizers).forEach(key => {
+                        if (isRec) {
+                            try { recognizers[key].start(); } catch (e) {}
+                        }
+                    });
+                }, 2000);
+            }
         }
 
         // ========== Translate ==========
@@ -445,7 +450,7 @@
                     addHist(text, trans, LANG[from]?.flag, LANG[to]?.flag);
                     speak(trans, to);
                 } else {
-                    dstTxt.textContent = 'خطأ';
+                    dstTxt.textContent = 'خطأ في الترجمة';
                 }
             } catch (e) {
                 dstTxt.textContent = 'تحقق من الإنترنت';
@@ -473,12 +478,34 @@
         // ========== Start/Stop ==========
         function start() {
             if (isRec) return;
-            try { rec.start(); } catch (e) {}
+            isRec = true;
+            
+            micBtn.classList.add('rec');
+            waves.classList.add('on');
+            dot.classList.remove('on');
+            dot.classList.add('rec');
+            stxt.textContent = 'يسمع 3 لغات...';
+            spk1.classList.add('active');
+
+            Object.values(recognizers).forEach(r => {
+                try { r.start(); } catch (e) {}
+            });
         }
 
         function stop() {
             if (!isRec) return;
-            try { rec.stop(); } catch (e) {}
+            isRec = false;
+
+            micBtn.classList.remove('rec');
+            waves.classList.remove('on');
+            dot.classList.remove('rec');
+            dot.classList.add('on');
+            stxt.textContent = 'جاهز';
+            spk1.classList.remove('active');
+
+            Object.values(recognizers).forEach(r => {
+                try { r.stop(); } catch (e) {}
+            });
         }
 
         // ========== History ==========
@@ -497,6 +524,13 @@
             if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
                 e.preventDefault();
                 start();
+            }
+        };
+
+        document.onkeyup = (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                stop();
             }
         };
 
