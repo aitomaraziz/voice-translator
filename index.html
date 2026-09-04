@@ -649,45 +649,80 @@
             if (!text) return;
             try { window.speechSynthesis.cancel(); } catch (e) {}
 
-            const v = pickVoice(lang);
+            const prefix = lang.split('-')[0];
+            const tl = prefix === 'zh' ? 'zh-CN' : prefix;
+            const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
+            if (!short.trim()) return;
 
-            // If no matching local voice (e.g. missing Arabic voice on Windows),
-            // use the online Google TTS fallback - always works for ar/zh/en
-            if (!v) {
-                speakOnline(text, lang);
+            const voicesApi = {
+                'ar': 'ar-EG-Hoda',
+                'zh-CN': 'zh-CN-XiaoxiaoNeural',
+                'en': 'en-US-JennyNeural'
+            };
+
+            // Provider chain: Google → StreamElements → local browser voice
+            const chain = [
+                {
+                    name: 'google',
+                    url: `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`
+                },
+                {
+                    name: 'streamelements',
+                    url: `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(voicesApi[tl] || 'en-US-JennyNeural')}&text=${encodeURIComponent(short)}`
+                },
+                {
+                    name: 'local',
+                    local: true
+                }
+            ];
+
+            ttsTry(chain, 0, short, lang);
+        }
+
+        // Try providers one by one until audio actually plays
+        function ttsTry(chain, i, text, lang) {
+            if (i >= chain.length) return;
+            const p = chain[i];
+
+            if (p.local) {
+                const v = pickVoice(lang);
+                if (!v) return;
+                setTimeout(() => {
+                    stxt.textContent = '🔊 Local';
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = v.lang;
+                    u.rate = 1;
+                    u.voice = v;
+                    window.speechSynthesis.speak(u);
+                }, 80);
                 return;
             }
 
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = lang;
-            u.rate = 1;
-            u.pitch = 1;
-            u.voice = v;
-            u.lang = v.lang; // force to the actual voice language
+            const a = new Audio();
+            a.volume = 1;
+            let done = false;
 
-            window.speechSynthesis.speak(u);
-        }
+            const next = () => {
+                if (done) return;
+                done = true;
+                try { a.pause(); a.src = ''; } catch (e) {}
+                ttsTry(chain, i + 1, text, lang);
+            };
 
-        // Online TTS fallback (Google endpoint) - plays via <audio>, no CORS needed
-        // Works for ar / zh / en (and most languages) without installing voices
-        function speakOnline(text, lang) {
-            try {
-                if (window.ttsAudio) {
-                    window.ttsAudio.pause();
-                    window.ttsAudio = null;
-                }
-                const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
-                if (!short.trim()) return;
-                const map = { 'ar': 'ar', 'zh-CN': 'zh-CN', 'zh': 'zh-CN', 'en': 'en' };
-                const tl = map[lang] || 'ar';
-                const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`;
-                const a = new Audio(url);
-                a.volume = 1;
-                a.play().catch(() => {
-                    stxt.textContent = I18N[uiLang].ready;
-                });
-                window.ttsAudio = a;
-            } catch (e) {}
+            a.addEventListener('playing', () => {
+                done = true;
+                stxt.textContent = '🔊 ' + (p.name === 'google' ? 'Google' : 'StreamElements');
+            });
+            a.addEventListener('error', () => { stxt.textContent = '🔇 ' + p.name; next(); });
+            a.play().catch((err) => { stxt.textContent = '🔇 ' + p.name; next(); });
+
+            a.src = p.url;
+            window.ttsAudio = a;
+
+            setTimeout(() => {
+                if (a.currentTime > 0) { done = true; }
+                else if (!done) { next(); }
+            }, 4000);
         }
 
         // ========== Start/Stop (continuous) ==========
