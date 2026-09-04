@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Translator - مترجم الصوت</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎤 مترجم الصوت</h1>
+            <p>تحدث بلغتك - ترجمة فورية</p>
+        </header>
+
+        <!-- Language Selection -->
+        <div class="language-section">
+            <div class="language-card" id="myLanguageCard">
+                <span class="language-label">لغتي</span>
+                <select id="myLanguage">
+                    <option value="ar">العربية</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            
+            <button class="swap-btn" id="swapBtn" title="تبديل اللغات">
+                ⇄
+            </button>
+            
+            <div class="language-card" id="otherLanguageCard">
+                <span class="language-label">لغة الطرف الآخر</span>
+                <select id="otherLanguage">
+                    <option value="zh">中文</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">جاري الاتصال...</span>
+        </div>
+
+        <!-- Main Talk Button -->
+        <div class="talk-section">
+            <button class="talk-btn" id="talkBtn">
+                <div class="talk-btn-inner">
+                    <div class="mic-icon">🎤</div>
+                    <div class="talk-text">اضغط للتحدث</div>
+                </div>
+                <div class="pulse-ring"></div>
+            </button>
+            <p class="talk-hint">اضغط واحتفظ - اترك ليتوقف الترجمة</p>
+        </div>
+
+        <!-- Translation Display -->
+        <div class="translation-section">
+            <div class="translation-card original">
+                <div class="card-header">
+                    <span class="lang-badge" id="originalLangBadge">العربية</span>
+                    <span class="card-title">الأصلي</span>
+                </div>
+                <div class="card-content" id="originalText">
+                    اضغط على زر麦克风 للبدء في التحدث...
+                </div>
+            </div>
+
+            <div class="translation-arrow">↓</div>
+
+            <div class="translation-card translated">
+                <div class="card-header">
+                    <span class="lang-badge" id="translatedLangBadge">中文</span>
+                    <span class="card-title">الترجمة</span>
+                </div>
+                <div class="card-content" id="translatedText">
+                    Translation will appear here...
+                </div>
+                <button class="play-btn" id="playBtn" title="تشغيل الصوت">
+                    🔊
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-section">
+            <button class="settings-btn" id="settingsBtn">⚙️ الإعدادات</button>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settingsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>الإعدادات</h2>
+                    <button class="close-btn" id="closeModal">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label>رابط الخادم (Backend URL)</label>
+                        <input type="text" id="serverUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+                    </div>
+                    <div class="setting-group">
+                        <label>الصوت التلقائي</label>
+                        <label class="switch">
+                            <input type="checkbox" id="autoPlay" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button class="save-btn" id="saveSettings">حفظ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>صُنع بـ ❤️ للطلاب العرب والصينيين</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
