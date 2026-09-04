@@ -400,10 +400,27 @@
         // ========== Load Voices (cached for speed) ==========
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                stxt.textContent = I18N[uiLang].ready + ' · ' + voices.length + ' 🎙️';
+            }
         }
-        if (window.speechSynthesis) {
+
+        function ensureVoices() {
             loadVoices();
-            window.speechSynthesis.onvoiceschanged = loadVoices;
+            // Some browsers load voices asynchronously - retry a few times
+            let retries = 0;
+            const interval = setInterval(() => {
+                retries++;
+                loadVoices();
+                if (voices.length > 0 || retries > 10) clearInterval(interval);
+            }, 300);
+        }
+
+        if (window.speechSynthesis) {
+            ensureVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                loadVoices();
+            };
         }
 
         // ========== Init Recognizer ==========
@@ -510,7 +527,43 @@
             }
         }
 
-        // ========== Speak (fast) ==========
+        // ========== Speak (fast, with voice fallbacks) ==========
+        function pickVoice(lang) {
+            if (voices.length === 0) loadVoices();
+
+            const prefix = lang.split('-')[0];
+
+            // 1) Exact language match
+            let v = voices.find(v => v.lang.toLowerCase() === lang.toLowerCase());
+            if (v) return v;
+
+            // 2) Language prefix match
+            v = voices.find(v => v.lang.toLowerCase().startsWith(prefix));
+            if (v) return v;
+
+            // 3) Arabic: try common Arabic voice names (works even with partial match)
+            if (prefix === 'ar') {
+                const arCandidates = voices.filter(v => {
+                    const l = v.lang.toLowerCase();
+                    return l.startsWith('ar') || v.name.toLowerCase().includes('arabic') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('salma');
+                });
+                if (arCandidates.length > 0) return arCandidates[0];
+            }
+
+            // 4) Chinese / English fallbacks
+            if (prefix === 'zh') {
+                const zhCandidates = voices.filter(v => v.lang.toLowerCase().startsWith('zh'));
+                if (zhCandidates.length > 0) return zhCandidates[0];
+            }
+            if (prefix === 'en') {
+                const enCandidates = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+                if (enCandidates.length > 0) return enCandidates[0];
+            }
+
+            // 5) Last resort - any voice
+            return voices[0] || null;
+        }
+
         function speak(text, lang) {
             if (!text) return;
             try { window.speechSynthesis.cancel(); } catch (e) {}
@@ -520,8 +573,11 @@
             u.rate = 1;
             u.pitch = 1;
 
-            const v = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
-            if (v) u.voice = v;
+            const v = pickVoice(lang);
+            if (v) {
+                u.voice = v;
+                u.lang = v.lang; // force to the actual voice language
+            }
 
             window.speechSynthesis.speak(u);
         }
