@@ -51,6 +51,62 @@
 
         .ui-btn.active { border-color: #00d4ff; background: rgba(0, 212, 255, 0.15); color: #00d4ff; }
 
+/* Settings */
+        .settings {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin: 8px 0;
+        }
+
+        .settings summary {
+            cursor: pointer;
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .settings-body { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+        .settings-label { font-size: 12px; color: #888; }
+
+        .settings-input {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .settings-row { display: flex; gap: 8px; }
+
+        .settings-btn {
+            flex: 1;
+            padding: 9px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(90deg, #00d4ff, #0088cc);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .settings-btn.warn { background: rgba(255,80,80,0.15); color: #ff8080; }
+
+        .settings .hint { font-size: 11px; color: #777; line-height: 1.5; }
+
+        .settings-status { font-size: 12px; color: #00ff88; min-height: 16px; }
+
         /* Language Selectors */
         .lang-select {
             background: rgba(255,255,255,0.05);
@@ -258,6 +314,21 @@
             <button class="ui-btn" id="uiEn" onclick="setUI('en')">English</button>
         </div>
 
+        <!-- AI Studio Settings -->
+        <details class="settings">
+            <summary id="settingsSummary">⚙️ Google AI Studio</summary>
+            <div class="settings-body">
+                <label class="settings-label" data-i18n="gemLabel">مفتاح Google AI Studio (اختياري)</label>
+                <input type="password" id="gemKeyInput" class="settings-input" placeholder="AIza..." autocomplete="off">
+                <div class="settings-row">
+                    <button class="settings-btn" id="gemSave" data-i18n="saveBtn">حفظ</button>
+                    <button class="settings-btn warn" id="gemClear" data-i18n="clearBtn">مسح</button>
+                </div>
+                <div class="hint" id="gemHint" data-i18n="gemHint">مجاني من aistudio.google.com — يجعل الصوت والترجمة أدق (عربي/صيني/إنجليزي)</div>
+                <div class="settings-status" id="gemStatus"></div>
+            </div>
+        </details>
+
         <!-- Language Selectors -->
         <div class="lang-select">
             <div class="box">
@@ -352,7 +423,13 @@
                 startSub: 'اضغط للسماح بالميكروفون وسأستمع باستمرار وأترجم فورياً بكل اللغات',
                 startBtn: 'ابدأ الآن 🚀',
                 starting: 'جارٍ التشغيل...',
-                started: 'يعمل تلقائياً - تحدث الآن'
+                started: 'يعمل تلقائياً - تحدث الآن',
+                gemLabel: 'مفتاح Google AI Studio (اختياري)',
+                gemHint: 'مجاني من aistudio.google.com — يجعل الصوت والترجمة أدق (عربي/صيني/إنجليزي). المفتاح يُحفظ في متصفحك فقط ولا يُرفع للإنترنت.',
+                saveBtn: 'حفظ المفتاح',
+                clearBtn: 'مسح المفتاح',
+                gemSaved: '✓ تم حفظ المفتاح - الصوت والترجمة عبر Google AI Studio',
+                gemCleared: 'تم مسح المفتاح'
             },
             zh: {
                 appTitle: '⚡ 即时翻译',
@@ -378,7 +455,13 @@
                 startSub: '点击允许麦克风，我会持续聆听并即时翻译',
                 startBtn: '立即开始 🚀',
                 starting: '正在启动...',
-                started: '全自动运行 - 请说话'
+                started: '全自动运行 - 请说话',
+                gemLabel: 'Google AI Studio 密钥（可选）',
+                gemHint: '在 aistudio.google.com 免费获取 — 让语音和翻译更精准（中/阿/英）。密钥仅保存在你的浏览器，不会上传。',
+                saveBtn: '保存密钥',
+                clearBtn: '清除密钥',
+                gemSaved: '✓ 已保存 - 语音和翻译使用 Google AI Studio',
+                gemCleared: '密钥已清除'
             },
             en: {
                 appTitle: '⚡ Instant Translator',
@@ -404,7 +487,13 @@
                 startSub: 'Click to allow the mic - I will listen continuously and translate instantly',
                 startBtn: 'Start now 🚀',
                 starting: 'Starting...',
-                started: 'Running automatically - speak now'
+                started: 'Running automatically - speak now',
+                gemLabel: 'Google AI Studio API key (optional)',
+                gemHint: 'Free from aistudio.google.com — better voice + translation (Arabic/Chinese/English). The key stays in your browser only.',
+                saveBtn: 'Save key',
+                clearBtn: 'Clear key',
+                gemSaved: '✓ Saved - voice & translation via Google AI Studio',
+                gemCleared: 'Key cleared'
             }
         };
 
@@ -447,6 +536,48 @@
         const uiZh = document.getElementById('uiZh');
         const uiEn = document.getElementById('uiEn');
         const histList = document.getElementById('histList');
+
+        // ========== Google AI Studio (optional) ==========
+        const gemKeyInput = document.getElementById('gemKeyInput');
+        const gemSave = document.getElementById('gemSave');
+        const gemClear = document.getElementById('gemClear');
+        const gemStatus = document.getElementById('gemStatus');
+
+        function getGemKey() {
+            return (localStorage.getItem('gemini_key') || '').trim();
+        }
+
+        function refreshGemUI() {
+            const has = !!getGemKey();
+            if (gemKeyInput) {
+                gemKeyInput.value = has ? '••••••••' : '';
+            }
+            if (gemStatus) {
+                gemStatus.textContent = has ? '🔑 ✓' : '';
+            }
+        }
+
+        if (gemSave) {
+            gemSave.onclick = () => {
+                const v = (gemKeyInput.value || '').trim();
+                if (v && v !== '••••••••') {
+                    localStorage.setItem('gemini_key', v);
+                    gemStatus.textContent = '✓';
+                    if (gemKeyInput) gemKeyInput.value = '••••••••';
+                    setTimeout(() => { gemStatus.textContent = ''; }, 2500);
+                }
+            };
+        }
+
+        if (gemClear) {
+            gemClear.onclick = () => {
+                localStorage.removeItem('gemini_key');
+                if (gemKeyInput) gemKeyInput.value = '';
+                gemStatus.textContent = '×';
+                setTimeout(() => { gemStatus.textContent = ''; }, 2000);
+            };
+        }
+        refreshGemUI();
 
         // ========== Set UI Language ==========
         function setUI(lang) {
@@ -588,6 +719,19 @@
             dstTxt.textContent = I18N[uiLang].translating;
 
             try {
+                // Better translation via Google AI Studio when a key is set
+                if (getGemKey()) {
+                    const gemTrans = await geminiTranslate(text, from, to);
+                    if (gemTrans) {
+                        dstTxt.textContent = gemTrans;
+                        lastTranslated = gemTrans;
+                        lastSpoken = text;
+                        addHist(text, gemTrans, from, to);
+                        speak(gemTrans, to);
+                        return;
+                    }
+                }
+
                 const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -645,6 +789,88 @@
             return null;
         }
 
+        // ========== Google AI Studio TTS ==========
+        function base64ToU8(b64) {
+            const bin = atob(b64);
+            const u8 = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+            return u8;
+        }
+
+        function pcmToWav(pcm) {
+            const sampleRate = 24000, numChannels = 1, bitsPerSample = 16;
+            const n = pcm.byteLength;
+            const buffer = new ArrayBuffer(44 + n);
+            const view = new DataView(buffer);
+            const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+            writeStr(0, 'RIFF'); view.setUint32(4, 36 + n, true); writeStr(8, 'WAVE');
+            writeStr(12, 'fmt '); view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true);
+            view.setUint16(32, numChannels * bitsPerSample / 8, true);
+            view.setUint16(34, bitsPerSample, true);
+            writeStr(36, 'data'); view.setUint32(40, n, true);
+            new Uint8Array(buffer, 44).set(new Uint8Array(pcm));
+            return buffer;
+        }
+
+        function audioBlobFromParts(j) {
+            const part = j?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+            if (!part || !part.inlineData?.data) return null;
+            const mime = (part.inlineData.mimeType || '').toLowerCase();
+            let buf = base64ToU8(part.inlineData.data);
+            const tag = String.fromCharCode(buf[0] || 0, buf[1] || 0, buf[2] || 0, buf[3] || 0);
+            if (tag === 'RIFF' || mime.includes('wav')) return new Blob([buf.buffer], { type: 'audio/wav' });
+            if (tag === 'OggS' || mime.includes('ogg')) return new Blob([buf.buffer], { type: 'audio/ogg' });
+            return new Blob([pcmToWav(buf.buffer)], { type: 'audio/wav' });
+        }
+
+        async function geminiTTS(text, lang) {
+            const key = getGemKey();
+            if (!key) return null;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(key)}`;
+            const body = {
+                contents: [{ parts: [{ text: 'Speak this text aloud:\n' + text }] }],
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: { voice: 'Kore' }
+                }
+            };
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) return null;
+            const j = await res.json();
+            return audioBlobFromParts(j);
+        }
+
+        // ========== Google AI Studio Translation (optional, better quality) ==========
+        async function geminiTranslate(text, from, to) {
+            const key = getGemKey();
+            if (!key) return null;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+            const langName = { 'ar': 'العربية', 'zh-CN': '简体中文', 'en': 'English' };
+            const body = {
+                contents: [{
+                    parts: [{
+                        text: `Translate from ${langName[from] || from} to ${langName[to] || to}. Reply with the translation ONLY, no extra text, no quotes:\n\n${text}`
+                    }]
+                }]
+            };
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) return null;
+            const j = await res.json();
+            const t = j?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
+            return t || null;
+        }
+
         function speak(text, lang) {
             if (!text) return;
             try { window.speechSynthesis.cancel(); } catch (e) {}
@@ -654,29 +880,32 @@
             const short = text.replace(/[^\p{L}\p{N}\s.,!?;:]/gu, '').slice(0, 180);
             if (!short.trim()) return;
 
-            // Provider chain: Google TTS (no-referrer!) → local browser voice
-            // NOTE: Google returns 404 when it receives a Referer header.
-            // referrerpolicy="no-referrer" strips it so the request succeeds.
-            const chain = [
-                {
-                    name: 'google',
-                    url: `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`
-                },
-                {
-                    name: 'local',
-                    local: true
-                }
-            ];
+            // Provider chain: AI Studio (if key) → Google TTS → local browser voice
+            const chain = [];
 
-            ttsTry(chain, 0, short, lang);
+            if (getGemKey()) {
+                chain.push({ name: 'gemini', kind: 'blob' });
+            }
+
+            chain.push({
+                name: 'google',
+                kind: 'url',
+                // Google returns 404 when it receives a Referer header.
+                // referrerpolicy="no-referrer" strips it so the request succeeds.
+                url: `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(short)}&tl=${tl}&client=tw-ob&total=1&idx=0`
+            });
+
+            chain.push({ name: 'local', kind: 'local' });
+
+            ttsRun(chain, 0, short, lang);
         }
 
         // Try providers one by one until audio actually plays
-        function ttsTry(chain, i, text, lang) {
+        async function ttsRun(chain, i, text, lang) {
             if (i >= chain.length) return;
             const p = chain[i];
 
-            if (p.local) {
+            if (p.kind === 'local') {
                 const v = pickVoice(lang);
                 if (!v) return;
                 setTimeout(() => {
@@ -690,6 +919,22 @@
                 return;
             }
 
+            let src = null;
+            let revoke = null;
+            if (p.kind === 'blob') {
+                try {
+                    const blob = await geminiTTS(text, lang);
+                    if (!blob) { stxt.textContent = '🔇 gemini'; return ttsRun(chain, i + 1, text, lang); }
+                    src = URL.createObjectURL(blob);
+                    revoke = url => URL.revokeObjectURL(url);
+                } catch (e) {
+                    stxt.textContent = '🔇 gemini';
+                    return ttsRun(chain, i + 1, text, lang);
+                }
+            } else {
+                src = p.url;
+            }
+
             const a = document.createElement("audio");
             a.volume = 1;
             a.setAttribute("referrerpolicy", "no-referrer");
@@ -699,23 +944,23 @@
                 if (done) return;
                 done = true;
                 try { a.pause(); a.src = ''; } catch (e) {}
-                ttsTry(chain, i + 1, text, lang);
+                if (revoke) try { revoke(src); } catch (e) {}
+                ttsRun(chain, i + 1, text, lang);
             };
 
             a.addEventListener('playing', () => {
                 done = true;
-                stxt.textContent = '🔊 Google';
+                stxt.textContent = '🔊 ' + (p.name === 'gemini' ? 'Gemini' : 'Google');
             });
-            a.addEventListener('error', () => { stxt.textContent = '🔇 ' + p.name; next(); });
-            a.play().catch((err) => { stxt.textContent = '🔇 ' + p.name; next(); });
+            a.addEventListener('error', next);
+            a.play().catch(next);
 
-            a.src = p.url;
+            a.src = src;
             window.ttsAudio = a;
 
             setTimeout(() => {
-                if (a.currentTime > 0) { done = true; }
-                else if (!done) { next(); }
-            }, 4000);
+                if (!done && a.currentTime <= 0) next();
+            }, 5000);
         }
 
         // ========== Start/Stop (continuous) ==========
