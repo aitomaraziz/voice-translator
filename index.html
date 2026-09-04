@@ -26,6 +26,7 @@
 
         .header { text-align: center; padding: 15px 0; }
         .header h1 { font-size: 26px; background: linear-gradient(90deg, #00d4ff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { font-size: 12px; color: #666; margin-top: 5px; }
 
         /* Target Language Selector */
         .target-section {
@@ -36,17 +37,9 @@
             text-align: center;
         }
 
-        .target-label {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 10px;
-        }
+        .target-label { font-size: 13px; color: #888; margin-bottom: 10px; }
 
-        .target-btns {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
+        .target-btns { display: flex; gap: 10px; justify-content: center; }
 
         .target-btn {
             padding: 12px 20px;
@@ -63,11 +56,7 @@
 
         .target-btn .emoji { font-size: 24px; display: block; margin-bottom: 5px; }
 
-        .target-btn.active {
-            border-color: #ffd93d;
-            background: rgba(255, 217, 61, 0.15);
-            color: #ffd93d;
-        }
+        .target-btn.active { border-color: #ffd93d; background: rgba(255, 217, 61, 0.15); color: #ffd93d; }
 
         /* Status */
         .status-bar {
@@ -87,6 +76,25 @@
 
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .status-text { font-size: 13px; color: #888; }
+
+        /* Language rotation indicator */
+        .rotation-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .rot-lang {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.05);
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+
+        .rot-lang.active { opacity: 1; background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
 
         /* Mic Button */
         .mic-area {
@@ -117,10 +125,7 @@
             animation: pulse 1s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
         .mic-icon { font-size: 60px; }
         .mic-label { margin-top: 15px; font-size: 16px; color: #888; text-align: center; }
@@ -152,24 +157,28 @@
     <div class="app">
         <div class="header">
             <h1>⚡ مترجم فوري</h1>
+            <p>يدور بين اللغات تلقائياً للكشف عن صوتك</p>
         </div>
 
         <div class="target-section">
             <div class="target-label">ترجم إلى:</div>
             <div class="target-btns">
                 <button class="target-btn active" id="btnZh" onclick="setTarget('zh-CN')">
-                    <span class="emoji">🇨🇳</span>
-                    صيني
+                    <span class="emoji">🇨🇳</span> صيني
                 </button>
                 <button class="target-btn" id="btnEn" onclick="setTarget('en')">
-                    <span class="emoji">🇺🇸</span>
-                    إنجليزي
+                    <span class="emoji">🇺🇸</span> إنجليزي
                 </button>
                 <button class="target-btn" id="btnAr" onclick="setTarget('ar')">
-                    <span class="emoji">🇸🇦</span>
-                    عربي
+                    <span class="emoji">🇸🇦</span> عربي
                 </button>
             </div>
+        </div>
+
+        <div class="rotation-indicator">
+            <span class="rot-lang" id="rotAr">🇸🇦 عربي</span>
+            <span class="rot-lang" id="rotZh">🇨🇳 صيني</span>
+            <span class="rot-lang" id="rotEn">🇺🇸 إنجليزي</span>
         </div>
 
         <div class="status-bar">
@@ -204,11 +213,12 @@
             </div>
         </div>
 
-        <div class="footer">اختر اللغة المطلوب الترجمة إليها - ثم تحدث</div>
+        <div class="footer">يدور تلقائياً بين عربي/صيني/إنجليزي للكشف</div>
     </div>
 
     <script>
         // ========== Config ==========
+        const LANGS_LIST = ['ar', 'zh-CN', 'en'];
         const LANG = {
             'ar': { name: 'العربية', flag: '🇸🇦' },
             'zh-CN': { name: '中文', flag: '🇨🇳' },
@@ -219,8 +229,11 @@
         let targetLang = 'zh-CN';
         let isRec = false;
         let rec = null;
+        let currentSensorLang = 0; // index in LANGS_LIST
         let lastSpoken = '';
-        let detectedLang = 'ar';
+        let detectedLang = null;
+        let sensorTimer = null;
+        let speechTimeout = null;
 
         // ========== Elements ==========
         const micBtn = document.getElementById('micBtn');
@@ -236,6 +249,9 @@
         const btnZh = document.getElementById('btnZh');
         const btnEn = document.getElementById('btnEn');
         const btnAr = document.getElementById('btnAr');
+        const rotAr = document.getElementById('rotAr');
+        const rotZh = document.getElementById('rotZh');
+        const rotEn = document.getElementById('rotEn');
 
         // ========== Check Browser ==========
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -246,7 +262,7 @@
             dot.classList.add('on');
         }
 
-        // ========== Set Target Language ==========
+        // ========== Set Target ==========
         function setTarget(lang) {
             targetLang = lang;
             btnZh.classList.toggle('active', lang === 'zh-CN');
@@ -255,22 +271,11 @@
             dstTag.textContent = `الترجمة (${LANG[lang].name})`;
         }
 
-        // ========== Detect Language ==========
-        function detectLanguage(text) {
-            let ar = 0, zh = 0, en = 0;
-            
-            for (let c of text) {
-                const code = c.charCodeAt(0);
-                if ((code >= 0x0600 && code <= 0x06FF) || (code >= 0xFB50 && code <= 0xFDFF) || (code >= 0xFE70 && code <= 0xFEFF)) ar++;
-                else if (code >= 0x4E00 && code <= 0x9FFF) zh++;
-                else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) en++;
-            }
-
-            const max = Math.max(ar, zh, en);
-            if (max === 0) return 'ar';
-            if (ar === max) return 'ar';
-            if (zh === max) return 'zh-CN';
-            return 'en';
+        // ========== Rotation Indicator ==========
+        function updateRotation() {
+            rotAr.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'ar');
+            rotZh.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'zh-CN');
+            rotEn.classList.toggle('active', LANGS_LIST[currentSensorLang] === 'en');
         }
 
         // ========== Init Recognizer ==========
@@ -278,26 +283,19 @@
             rec = new SR();
             rec.continuous = true;
             rec.interimResults = true;
-            rec.lang = 'ar';
+            rec.lang = LANGS_LIST[currentSensorLang];
 
             rec.onstart = () => {
-                isRec = true;
-                micBtn.classList.add('rec');
-                waves.classList.add('on');
-                dot.classList.remove('on');
-                dot.classList.add('rec');
-                stxt.textContent = 'أستمع...';
-                micLabel.textContent = 'اتكلم الآن';
+                // Keep listening
             };
 
             rec.onend = () => {
-                isRec = false;
-                micBtn.classList.remove('rec');
-                waves.classList.remove('on');
-                dot.classList.remove('rec');
-                dot.classList.add('on');
-                stxt.textContent = 'جاهز';
-                micLabel.textContent = 'اضغط للتحدث';
+                // When it ends, rotate to next language and restart
+                if (isRec) {
+                    currentSensorLang = (currentSensorLang + 1) % LANGS_LIST.length;
+                    updateRotation();
+                    try { rec.start(); } catch (e) {}
+                }
             };
 
             rec.onresult = (event) => {
@@ -313,23 +311,29 @@
                     }
                 }
 
-                if (interimText) srcTxt.textContent = interimText;
+                if (interimText) {
+                    srcTxt.textContent = interimText;
+                    // If we get interim results, this language is hearing something
+                    clearTimeout(speechTimeout);
+                    speechTimeout = setTimeout(() => {
+                        // Keep sensor in the current language
+                    }, 3000);
+                }
 
                 if (finalText && finalText.trim().length > 1) {
-                    detectedLang = detectLanguage(finalText);
+                    detectedLang = LANGS_LIST[currentSensorLang];
                     srcTxt.textContent = finalText;
                     srcTag.textContent = `ما قلته (${LANG[detectedLang].name})`;
-                    stxt.textContent = `تم كشف: ${LANG[detectedLang].name}`;
+                    stxt.textContent = `كشف: ${LANG[detectedLang].name}`;
                     translate(finalText, detectedLang, targetLang);
                 }
             };
 
             rec.onerror = (e) => {
-                if (e.error === 'no-speech') stxt.textContent = 'لم أسمع صوتاً';
-                else if (e.error === 'not-allowed') stxt.textContent = 'سمح بالوصول';
-                isRec = false;
-                micBtn.classList.remove('rec');
-                waves.classList.remove('on');
+                // If no-speech or aborted, silently rotate
+                if (e.error !== 'no-speech' && e.error !== 'aborted') {
+                    stxt.textContent = `خطأ: ${e.error}`;
+                }
             };
         }
 
@@ -382,11 +386,34 @@
         // ========== Start/Stop ==========
         function start() {
             if (isRec || !rec) return;
-            try { rec.start(); } catch (e) {}
+            isRec = true;
+
+            currentSensorLang = 0;
+            updateRotation();
+
+            micBtn.classList.add('rec');
+            waves.classList.add('on');
+            dot.classList.remove('on');
+            dot.classList.add('rec');
+            stxt.textContent = 'يستمع... يدور بين اللغات';
+            micLabel.textContent = 'اتكلم بأي لغة';
+
+            try { rec.lang = LANGS_LIST[0]; rec.start(); } catch (e) {}
         }
 
         function stop() {
             if (!isRec || !rec) return;
+            isRec = false;
+
+            clearTimeout(speechTimeout);
+
+            micBtn.classList.remove('rec');
+            waves.classList.remove('on');
+            dot.classList.remove('rec');
+            dot.classList.add('on');
+            stxt.textContent = 'جاهز';
+            micLabel.textContent = 'اضغط للتحدث';
+
             try { rec.stop(); } catch (e) {}
         }
 
