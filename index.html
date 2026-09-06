@@ -343,6 +343,7 @@
                 speakNow: 'اتكلم الآن',
                 noSpeech: 'لم أسمع صوتاً',
                 useChrome: 'استخدم Chrome',
+                useEdge: 'استخدم Microsoft Edge للصوت العصبي',
                 micDenied: 'تم رفض الميكروفون',
                 translating: 'جاري الترجمة...',
                 transError: 'خطأ في الترجمة',
@@ -369,6 +370,7 @@
                 speakNow: '请说话',
                 noSpeech: '未听到声音',
                 useChrome: '请使用 Chrome',
+                useEdge: '请在 Edge 浏览器打开以获得神经语音',
                 micDenied: '麦克风被拒绝',
                 translating: '正在翻译...',
                 transError: '翻译错误',
@@ -395,6 +397,7 @@
                 speakNow: 'Speak now',
                 noSpeech: 'No speech detected',
                 useChrome: 'Use Chrome',
+                useEdge: 'Open in Microsoft Edge for neural voice',
                 micDenied: 'Microphone denied',
                 translating: 'Translating...',
                 transError: 'Translation error',
@@ -470,6 +473,7 @@
         }
 
         // ========== Check Browser ==========
+        const IS_EDGE = /Edg\//.test(navigator.userAgent);
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) {
             stxt.textContent = I18N[uiLang].useChrome;
@@ -801,7 +805,7 @@
                 u.voice = v;
                 window.speechSynthesis.speak(u);
             } else {
-                stxt.textContent = '🔇 ' + prefix.toUpperCase();
+                stxt.textContent = '🔇 ' + prefix.toUpperCase() + (IS_EDGE ? '' : ' · ' + I18N[uiLang].useEdge);
             }
         }
 
