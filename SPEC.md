@@ -16,9 +16,17 @@
 | الملف | الوظيفة |
 |---|---|
 | `index.html` | التطبيق كاملاً (HTML + CSS + JS) في ملف واحد |
+| `launcher/start.cmd` | مشغّل: يفتح التطبيق داخل نافذة مستقلة من Microsoft Edge (وضع `--app`) |
+| `launcher/create-shortcut.ps1` | ينشئ اختصارات سطح المكتب وقائمة ابدأ |
 | `README.md` | توثيق أساسي |
 | `backend/` | (قديم/غير مستخدم) خادم FastAPI – Whisper + edge-tts |
 | `.github/workflows/ci.yml` | نشر تلقائي على GitHub Pages |
+
+## 4ا. المشغّل داخل Edge (متصفح داخلي)
+
+- `msedge.exe --app=https://aitomaraziz.github.io/voice-translator/ --window-size=460,800`
+- نافذة تطبيق مستقلة (بلا تبويبات/شريط عنوان) تشتغل بمحرك Edge نفسه و`User-Agent` يساوي Edg/…، فيقبل خادم Edge TTS الاتصال ويُنطق العربية.
+- مرّري `launcher/create-shortcut.ps1` مرة واحدة لإنشاء اختصار على سطح المكتب وقائمة ابدأ، أو شغّلي `launcher/start.cmd` مباشرة.
 
 ## 4. الخدمات الخارجية المستخدمة (كلها مجانية)
 
