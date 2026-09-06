@@ -7,6 +7,7 @@
 ## 2. متطلبات التشغيل
 
 - متصفح **Chrome أو Edge** (النسخ الحديثة) — ضروري لأنها تدعم Web Speech API
+- **للصوت العصبي من Microsoft Edge TTS يجب فتح التطبيق في متصفح Microsoft Edge**: الخادم يرفض الاتصال (HTTP 403) ما لم يحمل الطلب `User-Agent` يحتوي `Edg/...`، والمتصفح يحدد UA بنفسه ولا يمكن تغييره من JavaScript
 - اتصال بالإنترنت (للترجمة ولصوت Microsoft)
 - لا يحتاج: خادم، قاعدة بيانات، تثبيت، مفاتيح، حسابات
 
@@ -58,13 +59,14 @@
 
 ### Microsoft Edge TTS (فئة `edgeSpeak`):
 - WebSocket إلى:
-  `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC=...&Sec-MS-GEC-Version=2024-11-09&ConnectionId=...`
-- **رمز `Sec-MS-GEC` إلزامي**: يُحسب من `windowsTicks` (وحدة 300 ثانية) + رمز العميل عبر SHA-256 (سداسي عشري بأحرف كبيرة). بدونه يغلق الخادم الاتصال بصمت.
+  `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC=...&Sec-MS-GEC-Version=1-143.0.3650.75&ConnectionId=...`
+- **رمز `Sec-MS-GEC` إلزامي**: يُحسب عبر **BigInt** (القيمة ≈13.4×10¹⁶ تتجاوز 2⁵³ فلا يصح نوع Number العادي في JS) من `windowsTicks` (وحدة 300 ثانية) + رمز العميل عبر SHA-256 (سداسي عشري بأحرف كبيرة). بدونه أو بخطأ دقة يرفض الخادم بصمت.
+- **الشرط الحاسم ليد المصافحة**: الخادم لا يقبل الطلب إلا إذا كان `User-Agent` يحتوي `Edg/...` (متصفح Edge) → 101، وإلا 403. Origin لا يهم.
 - إرسال رسالتين نصيتين:
   - `Path:speech.config` مع outputFormat: `audio-24khz-48kbitrate-mono-mp3`
   - `Path:ssml` بصيغة `<speak><voice name=...><prosody>`
 - **الأصوات (ببدائل تلقائية):**
-  - العربية: `ar-EG-SalmaNeural` ← `ar-SA-HamedNeural` ← `ar-EG-ShakirNeural`
+  - العربية: `ar-SA-HamedNeural` ← `ar-EG-SalmaNeural` ← `ar-EG-ShakirNeural` ← `ar-AE-FatimaNeural` ← `ar-SY-AmanyNeural`
   - الصينية: `zh-CN-XiaoxiaoNeural` ← `zh-CN-YunxiNeural`
   - الإنجليزية: `en-US-AriaNeural` ← `en-GB-SoniaNeural`
 - استقبال إطارات ثنائية تحتوي `Path:audio\r\n` → تجميعها → `Blob` بصيغة `audio/mpeg` → تشغيل عبر `<audio>`

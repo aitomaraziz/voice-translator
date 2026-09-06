@@ -647,14 +647,14 @@
         // ===== Edge TTS (Microsoft neural voices - free, no key, ar/zh/en) =====
         const EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
         const EDGE_WSS = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
-
-        // https://github.com/andresayac/edge-tts  (browser-verified implementation)
-        // Edge now REQUIRES a Sec-MS-GEC token; without it the server closes silently.
+        // Reference implementation (voipi / rany2 edge-tts): the WINDOWS ticks value
+        // exceeds 2^53, so it MUST be computed with BigInt to stay exact, otherwise
+        // the SHA-256 token mismatches and the server closes the socket silently.
         async function edgeSecGec() {
-            const nowSec = Math.floor(Date.now() / 1000);
-            const rounded = nowSec - (nowSec % 300);          // 5-minute domain
-            const windowsTicks = (11644473600 + rounded) * 10000000;
-            const data = new TextEncoder().encode(`${windowsTicks}${EDGE_TOKEN}`);
+            const epochSec = BigInt(Math.floor(Date.now() / 1000) + 11644473600);
+            const ticks = epochSec * 10000000n;                       // Windows file time
+            const rounded = ticks - (ticks % 3000000000n);            // 5-minute domain
+            const data = new TextEncoder().encode(`${rounded}${EDGE_TOKEN}`);
             const digest = await crypto.subtle.digest('SHA-256', data);
             return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
         }
@@ -662,7 +662,7 @@
         const EDGE_VOICES = {
             en: ['en-US-AriaNeural', 'en-GB-SoniaNeural'],
             zh: ['zh-CN-XiaoxiaoNeural', 'zh-CN-YunxiNeural'],
-            ar: ['ar-EG-SalmaNeural', 'ar-SA-HamedNeural', 'ar-EG-ShakirNeural']
+            ar: ['ar-SA-HamedNeural', 'ar-EG-SalmaNeural', 'ar-EG-ShakirNeural', 'ar-AE-FatimaNeural', 'ar-SY-AmanyNeural']
         };
 
         // Try each candidate voice until one actually produces audio.
@@ -691,7 +691,7 @@
                 const SEP = new TextEncoder().encode('Path:audio\r\n');
 
                 edgeSecGec().then((sec) => {
-                    const url = `${EDGE_WSS}?TrustedClientToken=${EDGE_TOKEN}&Sec-MS-GEC=${sec}&Sec-MS-GEC-Version=2024-11-09&ConnectionId=${connId}`;
+                    const url = `${EDGE_WSS}?TrustedClientToken=${EDGE_TOKEN}&Sec-MS-GEC=${sec}&Sec-MS-GEC-Version=1-143.0.3650.75&ConnectionId=${connId}`;
                     const chunks = [];
                     let ws = null;
                     let settled = false;      // final answer given
